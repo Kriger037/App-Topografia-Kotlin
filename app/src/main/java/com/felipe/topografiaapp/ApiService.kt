@@ -2,6 +2,7 @@ package com.felipe.topografiaapp
 
 import retrofit2.Call;
 import retrofit2.http.GET;
+import retrofit2.http.Query
 
 interface ApiService {
     //Prueba para obtener usuarios
@@ -11,4 +12,10 @@ interface ApiService {
     //Prueba para obtener fundos
     @GET("topografia/obtener_fundos.php")
     fun obtenerFundos(): Call<List<Fundo>>
+
+    //Obtener canchas por codigo de fundo
+    @GET("topografia/obtener_canchas.php")
+    fun obtenerCanchas(
+        @Query("codigo_fundo") codigo: String
+    ): Call<List<Cancha>>
 }

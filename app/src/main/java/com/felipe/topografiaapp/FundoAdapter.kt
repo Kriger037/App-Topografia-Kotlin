@@ -25,6 +25,15 @@ class FundoAdapter(private val listaFundos: List<Fundo>) : RecyclerView.Adapter<
         holder.tvNombreFundo.text = fundoActual.nombre_fundo
         holder.tvCodigoFundo.text = "Código: ${fundoActual.codigo_fundo}"
         holder.tvComuna.text = "Comuna: ${fundoActual.comuna}"
+
+        holder.itemView.setOnClickListener { view ->
+            val intent = android.content.Intent(view.context, CanchasActivity::class.java)
+
+            intent.putExtra("CODIGO_FUNDO", fundoActual.codigo_fundo)
+            intent.putExtra("NOMBRE_FUNDO", fundoActual.nombre_fundo)
+
+            view.context.startActivity(intent)
+        }
     }
 
     override fun getItemCount(): Int{
