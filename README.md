@@ -11,13 +11,14 @@ Aplicación móvil nativa en Android (Kotlin) diseñada para optimizar la gesti�
 - [x] **Módulo 6:** Navegación relacional (Intents) y paso de parámetros entre pantallas, incorporando Toolbars personalizadas.
 - [x] **Módulo 7:** Evolución de BD con tablas dependientes (`canchas`), uso de Llaves Naturales (`codigo_fundo`) y auditoría de tiempo (`TIMESTAMP`).
 - [x] **Módulo 8:** Evolución de API con peticiones GET parametrizadas e `INNER JOIN` relacional.
-- [ ] **Siguiente paso:** Implementación visual (RecyclerView) para la lista de Canchas asociadas al fundo seleccionado y botón de exportación a .txt.
+- [x] **Módulo 9:** Implementación visual (RecyclerView + CardView) para la lista dinámica de Canchas filtradas por Fundo.
+- [ ] **Siguiente paso:** Implementar la vista de Puntos de Referencia (PRs) o habilitar el botón de exportación a formato `.txt`.
 
-## 🛠️ Tecnologías Utilizadas
-* **Frontend Móvil:** Kotlin, Android Studio, XML, Intents, RecyclerViews, Custom Toolbars.
+## Tecnologías Utilizadas
+* **Frontend Móvil:** Kotlin, Android Studio, XML, Intents, RecyclerViews, Custom Toolbars, CardViews.
 * **Comunicaciones:** Retrofit2, Gson.
 * **Backend:** PHP (PDO, control de Inyección SQL, respuestas JSON).
 * **Base de Datos:** MySQL (Llaves Naturales, Foreign Keys en Cascada, Workbench).
 
-## 📝 Notas de Arquitectura
+## Notas de Arquitectura
 El proyecto utiliza una arquitectura Cliente-Servidor mediante API REST para el MVP. Se está diseñando con la visión de una futura implementación *Offline-First* con base de datos local (Room) para zonas sin cobertura de red en cerros o faenas, además de contemplar la exportación de datos directos a archivos `.txt` para integración con Estaciones Totales o AutoCAD.
