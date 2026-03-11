@@ -1,5 +1,6 @@
 package com.felipe.topografiaapp
 
+import android.adservices.adid.AdId
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Query
@@ -18,4 +19,10 @@ interface ApiService {
     fun obtenerCanchas(
         @Query("codigo_fundo") codigo: String
     ): Call<List<Cancha>>
+
+    //Peticion para obtener PRs por id de cancha
+    @GET("topografia/obtener_prs.php")
+    fun obtenerPRs(
+        @Query("cancha_id") canchaId: Int
+    ): Call<List<PR>>
 }

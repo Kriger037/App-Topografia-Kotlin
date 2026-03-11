@@ -11,8 +11,10 @@ Aplicación móvil nativa en Android (Kotlin) diseñada para optimizar la gesti�
 - [x] **Módulo 6:** Navegación relacional (Intents) y paso de parámetros entre pantallas, incorporando Toolbars personalizadas.
 - [x] **Módulo 7:** Evolución de BD con tablas dependientes (`canchas`), uso de Llaves Naturales (`codigo_fundo`) y auditoría de tiempo (`TIMESTAMP`).
 - [x] **Módulo 8:** Evolución de API con peticiones GET parametrizadas e `INNER JOIN` relacional.
-- [x] **Módulo 9:** Implementación visual (RecyclerView + CardView) para la lista dinámica de Canchas filtradas por Fundo.
-- [ ] **Siguiente paso:** Implementar la vista de Puntos de Referencia (PRs) o habilitar el botón de exportación a formato `.txt`.
+- [x] **Módulo 9:** Interfaz de Canchas con paso de parámetros (Intents) y filtrado en servidor.
+- [x] **Módulo 10:** Creación de tabla `puntos_referencia` con Triggers para herencia de fechas.
+- [x] **Módulo 11:** Implementación de interfaz visual tipo tabla (`activity_prs.xml` y `item_pr.xml`) para lectura ordenada de coordenadas (Norte, Este, Cota).
+- [ ] **Siguiente paso:** Integrar API de Google Maps para visualización satelital de los Puntos de Referencia en terreno.
 
 ## Tecnologías Utilizadas
 * **Frontend Móvil:** Kotlin, Android Studio, XML, Intents, RecyclerViews, Custom Toolbars, CardViews.

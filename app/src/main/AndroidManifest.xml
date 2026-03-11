@@ -19,6 +19,8 @@
             android:name=".CanchasActivity"
             android:exported="false" />
         <activity
+            android:name=".PRsActivity"/>
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>

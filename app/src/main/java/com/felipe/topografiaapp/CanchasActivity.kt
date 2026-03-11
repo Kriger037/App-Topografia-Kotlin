@@ -38,7 +38,6 @@ class CanchasActivity : AppCompatActivity() {
             .build()
 
         val servicio = retrofit.create(ApiService::class.java)
-        // ------------------------------------------------------------------------
 
         // 5. LLAMAR A PHP CON RETROFIT
         val llamada = servicio.obtenerCanchas(codigoFundo)
@@ -51,7 +50,7 @@ class CanchasActivity : AppCompatActivity() {
                     if (listaCanchas.isEmpty()) {
                         Toast.makeText(this@CanchasActivity, "Aún no hay canchas registradas.", Toast.LENGTH_LONG).show()
                     } else {
-                        // Si hay datos, dibujamos las tarjetas
+                        // Si hay datos se dibujan las tarjetas
                         val adapter = CanchaAdapter(listaCanchas)
                         rvCanchas.adapter = adapter
                     }

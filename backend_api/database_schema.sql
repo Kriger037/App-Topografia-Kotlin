@@ -49,3 +49,45 @@ INSERT INTO canchas (codigo_fundo, numero_cancha,fecha_creacion) VALUES
 
 -- Corroboramos los datos ingresados
 SELECT * FROM canchas;
+
+-- Creacion de tabla para PRs
+CREATE TABLE puntos_referencia (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	cancha_id INT NOT NULL,
+	descriptor VARCHAR(50) NOT NULL,
+	norte DECIMAL(15,4) NOT NULL,
+	este DECIMAL(15,4) NOT NULL,
+	cota DECIMAL(15,4) NOT NULL,
+	fecha_creacion TIMESTAMP, -- Se creará un TRIGGER para utilizar fecha de la cancha asociada 
+    fecha_modificacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (cancha_id) REFERENCES canchas(id) ON DELETE CASCADE);
+
+-- TRIGGER para heredar fecha de cancha
+DELIMITER //
+
+CREATE TRIGGER heredar_fecha_cancha
+BEFORE INSERT ON puntos_referencia
+FOR EACH ROW
+BEGIN
+	DECLARE fecha_inicial TIMESTAMP;
+    -- Esto busca la fecha de creación de la cancha a la que pertenecen los PRs
+    SELECT fecha_creacion INTO fecha_inicial
+    FROM canchas
+    WHERE id = NEW.cancha_id;
+    -- Se le asigna la fecha de creacion al PR antes de guardar la info
+    SET NEW.fecha_creacion = fecha_inicial;
+END; //
+
+DELIMITER ; 
+
+-- Insertamos los datos de Huachi C1 reordenando las columnas a: Norte, Este, Cota
+INSERT INTO puntos_referencia (cancha_id, norte, este, cota, descriptor) VALUES
+(2, 5828008.689, 254098.215, 446.040, 'PR1'),
+(2, 5827981.346, 254059.546, 445.290, 'PR2'),
+(2, 5827992.962, 254046.902, 444.851, 'PR3'),
+(2, 5828017.054, 254060.695, 445.002, 'PR4'),
+(2, 5828036.073, 254084.676, 445.027, 'PR5');
+
+-- Revisamos la integridad de nuestros datos
+Select * from puntos_referencia
+
