@@ -35,10 +35,11 @@ class PRsActivity : AppCompatActivity() {
         val tvTitulo = findViewById<TextView>(R.id.tvTituloCancha)
         tvTitulo.text = "PRs $numeroCancha"
 
-        // Configuración del botón para ver el mapa (de momento avisa que estara listo pronto (11.03.2026))
+        // Configuración del botón para ver el mapa
         val btnVerMapa = findViewById<Button>(R.id.btnVerMapa)
         btnVerMapa.setOnClickListener {
-            Toast.makeText(this, "Pronto abriremos el mapa de $numeroCancha", Toast.LENGTH_SHORT).show()
+            val intent = android.content.Intent(this, MapaActivity::class.java)
+            startActivity(intent)
         }
 
         // Configuración de la lista
@@ -49,7 +50,7 @@ class PRsActivity : AppCompatActivity() {
 
         if (canchaId != -1){
             val retrofit = Retrofit.Builder()
-                .baseUrl("http://10.0.2.2/") // IP del emulador
+                .baseUrl(BuildConfig.BASE_URL) // URL base de la API adquirido de local properties
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
 

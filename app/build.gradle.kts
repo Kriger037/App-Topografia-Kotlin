@@ -1,5 +1,16 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
+}
+
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()){
+    localPropertiesFile.inputStream().use {stream ->
+        localProperties.load(stream)
+    }
 }
 
 android {
@@ -10,6 +21,10 @@ android {
         }
     }
 
+    buildFeatures{
+        buildConfig = true
+    }
+
     defaultConfig {
         applicationId = "com.felipe.topografiaapp"
         minSdk = 24
@@ -18,6 +33,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "BASE_URL", "\"${localProperties.getProperty("SERVER_BASE_URL", "http://localhost/")}\"")
+        manifestPlaceholders["mapApiKey"] = localProperties.getProperty("MAPS_API_KEY", "")
     }
 
     buildTypes {
@@ -48,4 +66,6 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    // Libreria de Google maps
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
 }

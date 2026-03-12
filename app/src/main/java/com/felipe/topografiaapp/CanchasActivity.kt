@@ -33,7 +33,7 @@ class CanchasActivity : AppCompatActivity() {
 
         // 4. Configurar Retrofit
         val retrofit = Retrofit.Builder()
-            .baseUrl("http://10.0.2.2/") // IP del emulador
+            .baseUrl(BuildConfig.BASE_URL)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
 

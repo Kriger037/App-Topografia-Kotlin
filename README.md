@@ -14,8 +14,24 @@ Aplicación móvil nativa en Android (Kotlin) diseñada para optimizar la gesti�
 - [x] **Módulo 9:** Interfaz de Canchas con paso de parámetros (Intents) y filtrado en servidor.
 - [x] **Módulo 10:** Creación de tabla `puntos_referencia` con Triggers para herencia de fechas.
 - [x] **Módulo 11:** Implementación de interfaz visual tipo tabla (`activity_prs.xml` y `item_pr.xml`) para lectura ordenada de coordenadas (Norte, Este, Cota).
-- [ ] **Siguiente paso:** Integrar API de Google Maps para visualización satelital de los Puntos de Referencia en terreno.
+- [x] **Módulo 12:** Integración de Google Maps SDK para visualización satelital de los Puntos de Referencia.
+- [x] **Módulo 13:** Implementación de seguridad (`local.properties` y `BuildConfig`) para inyección dinámica de credenciales y ocultamiento de IP/API Keys.
+- [ ] **Siguiente paso:** Implementar sistema de Autenticación (Login) y diseñar plataforma Web centralizada para la ingesta automatizada de archivos `.txt` de levantamientos.
 
+## ⚠️ Importante: Configuración del Entorno Local (Seguridad)
+
+Para proteger la integridad del proyecto, **la dirección IP del servidor y la API Key de Google Maps no se suben a este repositorio**. Si clonas este proyecto para ejecutarlo localmente, debes configurar las variables de entorno para que el proyecto pueda compilar y conectarse a la red:
+
+1. En la vista de proyecto de Android Studio, crea o localiza el archivo `local.properties` en el directorio raíz (este archivo está ignorado por Git).
+2. Agrega las siguientes dos líneas con tus propios datos:
+   ```properties
+   # Reemplaza con tu clave generada en Google Cloud Console
+   MAPS_API_KEY=TuClaveSecretaDeGoogleMaps
+   
+   # Reemplaza con la IP de tu servidor (Asegúrate de incluir "http://" y finalizar con "/")
+   # Usa 10.0.2.2/ si usas el emulador local, o tu IP física (ej. 192.168.1.X/) para dispositivos físicos
+   SERVER_BASE_URL=[http://10.0.2.2/](http://10.0.2.2/)
+   
 ## Tecnologías Utilizadas
 * **Frontend Móvil:** Kotlin, Android Studio, XML, Intents, RecyclerViews, Custom Toolbars, CardViews.
 * **Comunicaciones:** Retrofit2, Gson.

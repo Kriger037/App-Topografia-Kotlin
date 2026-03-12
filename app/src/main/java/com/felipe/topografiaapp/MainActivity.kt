@@ -24,7 +24,7 @@ class MainActivity : AppCompatActivity(){
         // 1. Configurar Retrofit
         val retrofit = Retrofit.Builder()
             // IMPORTANTE: Al usar emulador la ip es 10.0.2.2, de lo contrario utilizar la IP del dispositivo
-            .baseUrl("http://10.0.2.2/")
+            .baseUrl(BuildConfig.BASE_URL)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
 
