@@ -16,7 +16,8 @@ Aplicación móvil nativa en Android (Kotlin) diseñada para optimizar la gesti�
 - [x] **Módulo 11:** Implementación de interfaz visual tipo tabla (`activity_prs.xml` y `item_pr.xml`) para lectura ordenada de coordenadas (Norte, Este, Cota).
 - [x] **Módulo 12:** Integración de Google Maps SDK para visualización satelital de los Puntos de Referencia.
 - [x] **Módulo 13:** Implementación de seguridad (`local.properties` y `BuildConfig`) para inyección dinámica de credenciales y ocultamiento de IP/API Keys.
-- [ ] **Siguiente paso:** Implementar sistema de Autenticación (Login) y diseñar plataforma Web centralizada para la ingesta automatizada de archivos `.txt` de levantamientos.
+- [x] **Módulo 14:** Consolidación del sistema de Autenticación (Login) y visualización satelital en terreno con conversión estricta de coordenadas a 3 decimales y pase de parámetros.
+- [ ] **Siguiente paso:** Desarrollar script en PHP para la ingesta automatizada y conversión geodésica de coordenadas (UTM a WGS84) desde archivos `.txt`, y evaluar migración a arquitectura Offline-First para visualización de mapas sin señal.
 
 ## ⚠️ Importante: Configuración del Entorno Local (Seguridad)
 

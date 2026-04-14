@@ -1,5 +1,5 @@
 <?php
-header('Content-Type: application/json');
+header('Content-Type: application/json'); // Importante: Le dice al cliente que esto es JSON
 require 'conexion.php';
 
 if (!isset($_GET['codigo_fundo'])) {

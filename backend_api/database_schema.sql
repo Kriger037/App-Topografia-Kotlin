@@ -89,5 +89,51 @@ INSERT INTO puntos_referencia (cancha_id, norte, este, cota, descriptor) VALUES
 (2, 5828036.073, 254084.676, 445.027, 'PR5');
 
 -- Revisamos la integridad de nuestros datos
-Select * from puntos_referencia
+Select * from puntos_referencia;
+
+-- Agregamos columnas a tabla usuarios (nombre de usuario y contraseña)
+ALTER TABLE usuarios
+ADD COLUMN usuario VARCHAR(50) NOT NULL UNIQUE AFTER nombre,
+ADD COLUMN contraseña VARCHAR(50) NOT NULL AFTER usuario;
+
+-- Actualizar información del usuario registrado anteriormente (Felipe Hernandez)
+UPDATE usuarios
+SET usuario = 'fhernandez',
+contraseña = 12345
+WHERE id = 1;
+
+-- Revisamos los nuevos datos de la tabla usuarios
+SELECT * FROM usuarios;
+
+-- Modificamos la tabla puntos_referencia agregando las columnas para latitud y longitud
+ALTER TABLE puntos_referencia
+ADD COLUMN latitud DECIMAL(10,8) NULL AFTER cota,
+ADD COLUMN longitud DECIMAL(10,8) NULL AFTER latitud;
+
+-- Revisamos la actualizacion de la tabla
+SELECT * FROM puntos_referencia;
+
+-- ALERTA: debido al fortmato libre de las coordenadas anteriormente ingresadas, no es posibles ubicarlas en el mapa satelital
+-- se agrega un nuevo fundo->cancha->prs con coordenadas en formato UTM, las cuales pueden ser convertidas para visualizarse en google maps con precisión 
+INSERT INTO fundos (codigo_fundo, nombre_fundo, comuna) VALUES
+(8296,'Sta. Eugenia', 'Cautin - Osorno');
+
+SELECT * FROM fundos;
+
+INSERT INTO canchas (codigo_fundo, numero_cancha) VALUES
+(8296, 'Pozo');
+
+SELECT * FROM canchas;
+
+INSERT INTO puntos_referencia (cancha_id, descriptor, norte, este, cota, latitud, longitud) VALUES
+(6, 'PR1', 5675639.158, 734767.183, 226.661, -39.03679256, -72.28761066),
+(6,'PR6', 5675589.282, 734729.249, 228.839, -39.03725168, -72.28803109),
+(6,'PR7', 5675690.379, 734832.193, 219.536, -39.03631416, -72.28687774),
+(6,'PR8', 5675641.565, 734907.186, 220.766, -39.03673344, -72.28599563),
+(6,'PR9', 5675525.083, 734912.545, 229.189, -39.03778034, -72.28589371);
+
+SELECT * FROM puntos_referencia
+WHERE cancha_id = 6;
+
+
 

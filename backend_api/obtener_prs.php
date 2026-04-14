@@ -1,5 +1,5 @@
 <?php
-header('Content-Type: application/json; charset=utf-8');
+header('Content-Type: application/json; charset=utf-8'); // Importante: Le dice al cliente que esto es JSON
 
 require 'conexion.php';
 
@@ -9,7 +9,7 @@ if (isset($_GET['cancha_id'])) {
 
     try {
         // Consulta SQL con ordenamiento natural 
-        $sql = "SELECT id, descriptor, norte, este, cota, fecha_creacion, fecha_modificacion
+        $sql = "SELECT id, descriptor, norte, este, cota, latitud, longitud, fecha_creacion, fecha_modificacion
                 FROM puntos_referencia
                 WHERE cancha_id = :cancha_id
                 ORDER BY LENGTH(descriptor) ASC, descriptor ASC";
