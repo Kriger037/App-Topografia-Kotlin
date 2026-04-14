@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
 
     <application
         android:allowBackup="true"
@@ -16,24 +18,28 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
-            android:name=".CanchasActivity"
-            android:exported="false" />
-        <activity
-            android:name=".PRsActivity"/>
-        <activity
-            android:name=".MainActivity"
+            android:name=".LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
-            android:name=".MapaActivity"/>
+            android:name=".CanchasActivity"
+            android:exported="false" />
+        <activity android:name=".PRsActivity"
+            android:exported="false"/>
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+        </activity>
+        <activity android:name=".MapaActivity"
+            android:exported="false"/>
+
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="${mapApiKey}"/>
+            android:value="${MAPS_API_KEY}" />
     </application>
 
 </manifest>

@@ -31,9 +31,9 @@ class PRAdapter(private val listaPRs: List<PR>): RecyclerView.Adapter<PRAdapter.
         val prActual = listaPRs[position]
 
         holder.tvDescriptor.text = prActual.descriptor
-        holder.tvNorte.text = prActual.norte
-        holder.tvEste.text = prActual.este
-        holder.tvCota.text = prActual.cota
+        holder.tvNorte.text = String.format("%.3f", prActual.norte)
+        holder.tvEste.text = String.format("%.3f", prActual.este)
+        holder.tvCota.text = String.format("%.3f", prActual.cota)
 
         val soloFecha = prActual.fecha_modificacion.substringBefore(" ")
         holder.tvFechaModPR.text = "Última mod: $soloFecha"

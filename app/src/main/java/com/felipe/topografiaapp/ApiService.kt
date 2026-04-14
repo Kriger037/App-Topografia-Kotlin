@@ -2,7 +2,10 @@ package com.felipe.topografiaapp
 
 import android.adservices.adid.AdId
 import retrofit2.Call;
+import retrofit2.http.Field
+import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET;
+import retrofit2.http.POST
 import retrofit2.http.Query
 
 interface ApiService {
@@ -25,4 +28,11 @@ interface ApiService {
     fun obtenerPRs(
         @Query("cancha_id") canchaId: Int
     ): Call<List<PR>>
+
+    @FormUrlEncoded
+    @POST("topografia/login.php")
+    fun iniciarSesion(
+        @Field("usuario") usuario: String,
+        @Field("contrasena") contrasena: String
+    ): Call<LoginResponse>
 }

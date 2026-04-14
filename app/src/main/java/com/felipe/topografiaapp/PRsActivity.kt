@@ -11,8 +11,6 @@ import androidx.recyclerview.widget.RecyclerView
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 
 class PRsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?){
@@ -28,7 +26,7 @@ class PRsActivity : AppCompatActivity() {
         // Configuración de la barra superior
         val miToolbar = findViewById<Toolbar>(R.id.toolbarPRs)
         setSupportActionBar(miToolbar)
-        supportActionBar?.title = "$codigoFundo - $numeroCancha"
+        supportActionBar?.title = "$codigoFundo - $nombreFundo"
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         // Configuración del título de la cancha
@@ -39,6 +37,7 @@ class PRsActivity : AppCompatActivity() {
         val btnVerMapa = findViewById<Button>(R.id.btnVerMapa)
         btnVerMapa.setOnClickListener {
             val intent = android.content.Intent(this, MapaActivity::class.java)
+            intent.putExtra("CANCHA_ID", canchaId)
             startActivity(intent)
         }
 
@@ -49,15 +48,8 @@ class PRsActivity : AppCompatActivity() {
         // Llamada a PHP con Retrofit
 
         if (canchaId != -1){
-            val retrofit = Retrofit.Builder()
-                .baseUrl(BuildConfig.BASE_URL) // URL base de la API adquirido de local properties
-                .addConverterFactory(GsonConverterFactory.create())
-                .build()
-
-            val servicio = retrofit.create(ApiService::class.java)
-            val llamada = servicio.obtenerPRs(canchaId)
-
-            llamada.enqueue(object : Callback<List<PR>> {
+            RetrofitClient.api.obtenerPRs(canchaId)
+                .enqueue(object : Callback<List<PR>> {
                 override fun onResponse(call: Call<List<PR>>, response: Response<List<PR>>){
                     if (response.isSuccessful){
                         val listaPRs = response.body() ?: emptyList()

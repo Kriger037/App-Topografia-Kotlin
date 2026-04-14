@@ -1,15 +1,15 @@
 package com.felipe.topografiaapp
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 
 
 class MainActivity : AppCompatActivity(){
@@ -18,22 +18,23 @@ class MainActivity : AppCompatActivity(){
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        //Configuración Toolbar
+        val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbarMain)
+        setSupportActionBar(toolbar)
+        // Recuperacion datos de la sesion anterior
+        val tvUsuario = findViewById<TextView>(R.id.tvUsuarioLogueado)
+        val sharedPref = getSharedPreferences("SesionTopografia", MODE_PRIVATE)
+        val nombreGuardado = sharedPref.getString("nombre_usuario", "Desconocido")
+
+        tvUsuario.text = "Usuario: $nombreGuardado"
+
         val rvFundos = findViewById<RecyclerView>(R.id.rvFundos)
         rvFundos.layoutManager = LinearLayoutManager(this)
 
-        // 1. Configurar Retrofit
-        val retrofit = Retrofit.Builder()
-            // IMPORTANTE: Al usar emulador la ip es 10.0.2.2, de lo contrario utilizar la IP del dispositivo
-            .baseUrl(BuildConfig.BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
 
-        // 2. Crear la instancia del servicio
-        val servicio = retrofit.create(ApiService::class.java)
-
-        // 3. Realizar la llamada a la API para obtener usuarios
-        val llamada = servicio.obtenerUsuarios()
-        llamada.enqueue(object : Callback<List<Usuario>>{
+        // Realizar la llamada a la API para obtener usuarios
+        RetrofitClient.api.obtenerUsuarios()
+            .enqueue(object : Callback<List<Usuario>>{
             override fun onResponse(call: Call<List<Usuario>>, response: Response<List<Usuario>>){
                 if (response.isSuccessful){
                     val usuarios = response.body()
@@ -51,8 +52,8 @@ class MainActivity : AppCompatActivity(){
             }
         })
 
-        // 4. Realizar la llamada a la API para obtener fundos
-        val llamada2 = servicio.obtenerFundos()
+        // Realizar la llamada a la API para obtener fundos
+        val llamada2 = RetrofitClient.api.obtenerFundos()
 
         llamada2.enqueue(object : Callback<List<Fundo>>{
             override fun onResponse(call: Call<List<Fundo>>, response: Response<List<Fundo>>){
@@ -70,5 +71,27 @@ class MainActivity : AppCompatActivity(){
                 Log.e("API_FUNDOS", "Falló de red: ${t.message}")
             }
         })
+    }
+
+    override fun onCreateOptionsMenu(menu: android.view.Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean{
+
+        if(item.itemId == R.id.action_logout){
+            // Cerrar sesión
+
+            val sharedPref = getSharedPreferences("SesionTopografia", MODE_PRIVATE)
+            sharedPref.edit().clear().apply()
+
+            // Volver al Login
+            val intent = Intent(this, LoginActivity::class.java)
+            startActivity(intent)
+            finish()
+            return true
+        }
+        return super.onOptionsItemSelected(item)
     }
 }
