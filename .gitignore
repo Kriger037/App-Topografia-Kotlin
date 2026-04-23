@@ -13,3 +13,6 @@
 .externalNativeBuild
 .cxx
 local.properties
+/.idea/markdown.xml
+
+backend_api/vendor/
