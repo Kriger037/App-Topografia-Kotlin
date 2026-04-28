@@ -23,6 +23,9 @@ class PRsActivity : AppCompatActivity() {
         val codigoFundo = intent.getStringExtra("CODIGO_FUNDO") ?: "Sin Código"
         val nombreFundo = intent.getStringExtra("NOMBRE_FUNDO") ?: "Fundo Desconocido"
 
+        // Inicializamos nuestro Gestor de Memoria Local
+        val localDataManager = LocalDataManager(this)
+
         // Configuración de la barra superior
         val miToolbar = findViewById<Toolbar>(R.id.toolbarPRs)
         setSupportActionBar(miToolbar)
@@ -46,29 +49,44 @@ class PRsActivity : AppCompatActivity() {
         rvPRS.layoutManager = LinearLayoutManager(this)
 
         // Llamada a PHP con Retrofit
-
         if (canchaId != -1){
             RetrofitClient.api.obtenerPRs(canchaId)
                 .enqueue(object : Callback<List<PR>> {
-                override fun onResponse(call: Call<List<PR>>, response: Response<List<PR>>){
-                    if (response.isSuccessful){
-                        val listaPRs = response.body() ?: emptyList()
+                    override fun onResponse(call: Call<List<PR>>, response: Response<List<PR>>){
+                        if (response.isSuccessful){
+                            val listaPRs = response.body() ?: emptyList()
 
-                        if (listaPRs.isEmpty()){
-                            Toast.makeText(this@PRsActivity, "Aun no hay PRs en esta cancha.", Toast.LENGTH_LONG).show()
-                        } else{
-                            val adapter = PRAdapter(listaPRs)
-                            rvPRS.adapter = adapter
+                            if (listaPRs.isEmpty()){
+                                Toast.makeText(this@PRsActivity, "Aun no hay PRs en esta cancha.", Toast.LENGTH_LONG).show()
+                            } else{
+                                val adapter = PRAdapter(listaPRs)
+                                rvPRS.adapter = adapter
+
+                                localDataManager.guardarPRsPorCancha(canchaId, listaPRs)
+                            }
+                        } else {
+                            Toast.makeText(this@PRsActivity, "Error en el servidor: ${response.code()}", Toast.LENGTH_SHORT).show()
                         }
-                    } else {
-                        Toast.makeText(this@PRsActivity, "Error en el servidor: ${response.code()}", Toast.LENGTH_SHORT).show()
                     }
-                }
 
-                override fun onFailure(call: Call<List<PR>>, t: Throwable){
-                    Toast.makeText(this@PRsActivity, "Error de red: ${t.message}", Toast.LENGTH_LONG).show()
-                }
-            })
+                    override fun onFailure(call: Call<List<PR>>, t: Throwable){
+
+                        // Se revisan los PRs de la cancha específica
+                        val prsOffline = localDataManager.leerPRsPorCancha(canchaId)
+
+                        if (prsOffline.isNotEmpty()) {
+                            // Si encontramos datos, avisamos al usuario y los mostramos en la tabla
+                            Toast.makeText(this@PRsActivity, "Sin señal. Mostrando PRs guardados.", Toast.LENGTH_LONG).show()
+                            val adapter = PRAdapter(prsOffline)
+                            rvPRS.adapter = adapter
+                        } else {
+                            // Si no hay internet y tampoco había guardado nada antes
+                            Toast.makeText(this@PRsActivity, "Error de red y no hay datos guardados para esta cancha.", Toast.LENGTH_LONG).show()
+                        }
+
+                        // === FIN DEL MODO RESCATE ===
+                    }
+                })
         } else {
             Toast.makeText(this, "Error: No se recibió el ID de la cancha.", Toast.LENGTH_SHORT).show()
         }
