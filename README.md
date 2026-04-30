@@ -19,7 +19,8 @@ Aplicación móvil nativa en Android (Kotlin) diseñada para optimizar la gesti�
 - [x] **Módulo 14:** Consolidación del sistema de Autenticación (Login) y visualización satelital en terreno con conversión estricta de coordenadas a 3 decimales y pase de parámetros.
 - [x] **Módulo 15:** Implementación de plataforma Web centralizada para la ingesta automatizada de archivos `.txt`, con parser inteligente y motor geodésico (Proj4php) para conversión de UTM a WGS84.
 - [x] **Módulo 16:** Implementación de persistencia local (SharedPreferences + Gson) para navegación *Offline-First* e integración de GPS con caché de Google Maps. Se realizó un *downgrade* del Android Gradle Plugin a versión 8.7.2 para estabilidad.
-- [ ] **Siguiente paso:** Migración de persistencia a **Room Database** para gestión avanzada de datos relacionales en modo offline. Desarrollo de **Dashboard Web en PHP** para visualización centralizada de datos en oficina y navegación al módulo de carga de archivos.
+- [x] **Módulo 17:** Migración completa de persistencia a base de datos relacional SQLite (Room Database), creación de Entities con manejo de nulos, DAOs, e integración de programación asíncrona (Corrutinas) para una arquitectura offline robusta.
+- [ ] **Siguiente paso:** Desarrollo de un Dashboard administrativo Web en PHP y HTML/CSS para la visualización, gestión centralizada y navegación al módulo de carga de datos desde oficina.
 
 ## ⚠️ Importante: Configuración del Entorno Local (Seguridad)
 
