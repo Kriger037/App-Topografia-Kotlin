@@ -6,6 +6,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -15,24 +17,19 @@ class CanchasActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_canchas)
 
-        // Recibir datos del Fundo seleccionado
         val codigoFundo = intent.getStringExtra("CODIGO_FUNDO") ?: "Sin Código"
         val nombreFundo = intent.getStringExtra("NOMBRE_FUNDO") ?: "Fundo Desconocido"
 
-        // Inicializamos nuestro Gestor de Memoria Local
         val localDataManager = LocalDataManager(this)
 
-        // Configurar la barra superior
         val miToolbar = findViewById<Toolbar>(R.id.toolbarCanchas)
         setSupportActionBar(miToolbar)
         supportActionBar?.title = "Canchas fundo: $codigoFundo - $nombreFundo"
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        // Configurar la lista (RecyclerView)
         val rvCanchas = findViewById<RecyclerView>(R.id.rvCanchas)
         rvCanchas.layoutManager = LinearLayoutManager(this)
 
-        // Llamada a PHP con Retrofit
         RetrofitClient.api.obtenerCanchas(codigoFundo)
             .enqueue(object : Callback<List<Cancha>> {
                 override fun onResponse(call: Call<List<Cancha>>, response: Response<List<Cancha>>) {
@@ -42,11 +39,12 @@ class CanchasActivity : AppCompatActivity() {
                         if (listaCanchas.isEmpty()) {
                             Toast.makeText(this@CanchasActivity, "Aún no hay canchas registradas.", Toast.LENGTH_LONG).show()
                         } else {
-                            // Si hay datos se dibujan las tarjetas
                             val adapter = CanchaAdapter(listaCanchas)
                             rvCanchas.adapter = adapter
 
-                            localDataManager.guardarCanchasPorFundo(codigoFundo, listaCanchas)
+                            lifecycleScope.launch {
+                                localDataManager.guardarCanchasPorFundo(codigoFundo, listaCanchas)
+                            }
                         }
                     } else {
                         Toast.makeText(this@CanchasActivity, "Error en el servidor: ${response.code()}", Toast.LENGTH_SHORT).show()
@@ -55,17 +53,16 @@ class CanchasActivity : AppCompatActivity() {
 
                 override fun onFailure(call: Call<List<Cancha>>, t: Throwable) {
 
-                    // Buscamos en el archivero las canchas de este código de fundo
-                    val canchasOffline = localDataManager.leerCanchasPorFundo(codigoFundo)
+                    lifecycleScope.launch {
+                        val canchasOffline = localDataManager.leerCanchasPorFundo(codigoFundo)
 
-                    if (canchasOffline.isNotEmpty()) {
-                        // Si las encontramos, avisamos y dibujamos la lista
-                        Toast.makeText(this@CanchasActivity, "Sin señal. Mostrando canchas guardadas.", Toast.LENGTH_LONG).show()
-                        val adapter = CanchaAdapter(canchasOffline)
-                        rvCanchas.adapter = adapter
-                    } else {
-                        // Si no hay internet y no se había guardado nada antes
-                        Toast.makeText(this@CanchasActivity, "Error de red y no hay datos guardados para este fundo.", Toast.LENGTH_LONG).show()
+                        if (canchasOffline.isNotEmpty()) {
+                            Toast.makeText(this@CanchasActivity, "Sin señal. Mostrando canchas guardadas.", Toast.LENGTH_LONG).show()
+                            val adapter = CanchaAdapter(canchasOffline)
+                            rvCanchas.adapter = adapter
+                        } else {
+                            Toast.makeText(this@CanchasActivity, "Error de red y no hay datos guardados para este fundo.", Toast.LENGTH_LONG).show()
+                        }
                     }
                 }
             })

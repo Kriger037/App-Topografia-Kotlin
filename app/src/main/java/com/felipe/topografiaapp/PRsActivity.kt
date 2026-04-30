@@ -8,6 +8,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -17,26 +19,21 @@ class PRsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_prs)
 
-        // Se reciben los datos enviados por la pantalla anterior
         val canchaId = intent.getIntExtra("CANCHA_ID", -1)
         val numeroCancha = intent.getStringExtra("NUMERO_CANCHA") ?: "Cancha Desconocida"
         val codigoFundo = intent.getStringExtra("CODIGO_FUNDO") ?: "Sin Código"
         val nombreFundo = intent.getStringExtra("NOMBRE_FUNDO") ?: "Fundo Desconocido"
 
-        // Inicializamos nuestro Gestor de Memoria Local
         val localDataManager = LocalDataManager(this)
 
-        // Configuración de la barra superior
         val miToolbar = findViewById<Toolbar>(R.id.toolbarPRs)
         setSupportActionBar(miToolbar)
         supportActionBar?.title = "$codigoFundo - $nombreFundo"
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        // Configuración del título de la cancha
         val tvTitulo = findViewById<TextView>(R.id.tvTituloCancha)
         tvTitulo.text = "PRs $numeroCancha"
 
-        // Configuración del botón para ver el mapa
         val btnVerMapa = findViewById<Button>(R.id.btnVerMapa)
         btnVerMapa.setOnClickListener {
             val intent = android.content.Intent(this, MapaActivity::class.java)
@@ -44,11 +41,9 @@ class PRsActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        // Configuración de la lista
         val rvPRS = findViewById<RecyclerView>(R.id.rvPRs)
         rvPRS.layoutManager = LinearLayoutManager(this)
 
-        // Llamada a PHP con Retrofit
         if (canchaId != -1){
             RetrofitClient.api.obtenerPRs(canchaId)
                 .enqueue(object : Callback<List<PR>> {
@@ -62,7 +57,9 @@ class PRsActivity : AppCompatActivity() {
                                 val adapter = PRAdapter(listaPRs)
                                 rvPRS.adapter = adapter
 
-                                localDataManager.guardarPRsPorCancha(canchaId, listaPRs)
+                                lifecycleScope.launch {
+                                    localDataManager.guardarPRsPorCancha(canchaId, listaPRs)
+                                }
                             }
                         } else {
                             Toast.makeText(this@PRsActivity, "Error en el servidor: ${response.code()}", Toast.LENGTH_SHORT).show()
@@ -71,20 +68,17 @@ class PRsActivity : AppCompatActivity() {
 
                     override fun onFailure(call: Call<List<PR>>, t: Throwable){
 
-                        // Se revisan los PRs de la cancha específica
-                        val prsOffline = localDataManager.leerPRsPorCancha(canchaId)
+                        lifecycleScope.launch {
+                            val prsOffline = localDataManager.leerPRsPorCancha(canchaId)
 
-                        if (prsOffline.isNotEmpty()) {
-                            // Si encontramos datos, avisamos al usuario y los mostramos en la tabla
-                            Toast.makeText(this@PRsActivity, "Sin señal. Mostrando PRs guardados.", Toast.LENGTH_LONG).show()
-                            val adapter = PRAdapter(prsOffline)
-                            rvPRS.adapter = adapter
-                        } else {
-                            // Si no hay internet y tampoco había guardado nada antes
-                            Toast.makeText(this@PRsActivity, "Error de red y no hay datos guardados para esta cancha.", Toast.LENGTH_LONG).show()
+                            if (prsOffline.isNotEmpty()) {
+                                Toast.makeText(this@PRsActivity, "Sin señal. Mostrando PRs guardados.", Toast.LENGTH_LONG).show()
+                                val adapter = PRAdapter(prsOffline)
+                                rvPRS.adapter = adapter
+                            } else {
+                                Toast.makeText(this@PRsActivity, "Error de red y no hay datos guardados para esta cancha.", Toast.LENGTH_LONG).show()
+                            }
                         }
-
-                        // === FIN DEL MODO RESCATE ===
                     }
                 })
         } else {

@@ -8,6 +8,8 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -58,7 +60,9 @@ class MainActivity : AppCompatActivity(){
                     val fundos = response.body() ?: emptyList()
                     Log.d("API_FUNDOS", "Conexión exitosa Fundos encontrados: ${fundos.size}")
 
-                    localDataManager.guardarFundos(fundos)
+                    lifecycleScope.launch {
+                        localDataManager.guardarFundos(fundos)
+                    }
 
                     val adaptador = FundoAdapter(fundos)
                     rvFundos.adapter = adaptador
@@ -70,11 +74,13 @@ class MainActivity : AppCompatActivity(){
             override fun onFailure(call: Call<List<Fundo>>, t: Throwable){
                 Log.e("API_FUNDOS", "Falló de red: ${t.message}")
 
-                val fundosOffline = localDataManager.leerFundos()
-                if (fundosOffline.isNotEmpty()) {
-                    Toast.makeText(this@MainActivity, "Modo Offline: Cargando fundos guardados", Toast.LENGTH_LONG).show()
-                    val adaptador = FundoAdapter(fundosOffline)
-                    rvFundos.adapter = adaptador
+                lifecycleScope.launch {
+                    val fundosOffline = localDataManager.leerFundos()
+                    if (fundosOffline.isNotEmpty()) {
+                        Toast.makeText(this@MainActivity, "Modo Offline: Cargando fundos guardados", Toast.LENGTH_LONG).show()
+                        val adaptador = FundoAdapter(fundosOffline)
+                        rvFundos.adapter = adaptador
+                    }
                 }
             }
         })

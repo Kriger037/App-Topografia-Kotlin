@@ -7,6 +7,8 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -30,19 +32,15 @@ class MapaActivity : AppCompatActivity(), OnMapReadyCallback {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_mapa)
 
-        // Inicializamos el gestor
         localDataManager = LocalDataManager(this)
 
-        //Configuración del Toolbar
         val miToolbar = findViewById<Toolbar>(R.id.toolbarMapa)
         setSupportActionBar(miToolbar)
         supportActionBar?.title = "Mapa Satelital - Terreno"
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        //Se recupera el ID de la cancha de la activity anterior
         canchaId = intent.getIntExtra("CANCHA_ID", -1)
 
-        //Inicialización del mapa
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.mapaFragment) as SupportMapFragment
         mapFragment.getMapAsync(this)
@@ -50,8 +48,8 @@ class MapaActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onMapReady(googleMap: GoogleMap){
         mMap = googleMap
-        mMap.mapType = GoogleMap.MAP_TYPE_SATELLITE //Vista del mapa en modo satelital
-        mMap.uiSettings.isZoomControlsEnabled = true //Se agregan los botones +/- en el mapa
+        mMap.mapType = GoogleMap.MAP_TYPE_SATELLITE
+        mMap.uiSettings.isZoomControlsEnabled = true
 
         mMap.setMaxZoomPreference(21f)
 
@@ -71,28 +69,29 @@ class MapaActivity : AppCompatActivity(), OnMapReadyCallback {
                     val listaPrs = response.body() ?: emptyList()
 
                     if (listaPrs.isNotEmpty()){
-
-                        localDataManager.guardarPRsPorCancha(canchaId, listaPrs)
-                        dibujarMarcadores(listaPrs)
+                        lifecycleScope.launch {
+                            localDataManager.guardarPRsPorCancha(canchaId, listaPrs)
+                            dibujarMarcadores(listaPrs)
+                        }
                     }
                 }
             }
 
             override fun onFailure(call: Call<List<PR>>, t: Throwable) {
+                lifecycleScope.launch {
+                    val prsOffline = localDataManager.leerPRsPorCancha(canchaId)
 
-                val prsOffline = localDataManager.leerPRsPorCancha(canchaId)
-
-                if (prsOffline.isNotEmpty()) {
-                    Toast.makeText(this@MapaActivity, "Sin señal. Dibujando puntos guardados.", Toast.LENGTH_LONG).show()
-                    dibujarMarcadores(prsOffline)
-                } else {
-                    Toast.makeText(this@MapaActivity, "Error en red y no hay datos guardados.", Toast.LENGTH_SHORT).show()
+                    if (prsOffline.isNotEmpty()) {
+                        Toast.makeText(this@MapaActivity, "Sin señal. Dibujando puntos guardados.", Toast.LENGTH_LONG).show()
+                        dibujarMarcadores(prsOffline)
+                    } else {
+                        Toast.makeText(this@MapaActivity, "Error en red y no hay datos guardados.", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         })
     }
 
-    // Función para dibujar marcadores y centrar cámara
     private fun dibujarMarcadores(listaPrs: List<PR>) {
         val builder = LatLngBounds.Builder()
         var puntosConCoordenadas = 0
@@ -120,9 +119,7 @@ class MapaActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    // Función para solicitar permisos y encender el GPS
     private fun activarCapaUbicacion() {
-        // Verificamos si tenemos cualquiera de los dos permisos aprobados
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
             ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
@@ -137,7 +134,6 @@ class MapaActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    // Escucha la respuesta del usuario cuando se le pide permiso de ubicación
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
