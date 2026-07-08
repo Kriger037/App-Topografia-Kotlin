@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import com.felipe.topografiaapp.data.local.entity.CanchaEntity
 
 class CanchasActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,11 +40,23 @@ class CanchasActivity : AppCompatActivity() {
                         if (listaCanchas.isEmpty()) {
                             Toast.makeText(this@CanchasActivity, "Aún no hay canchas registradas.", Toast.LENGTH_LONG).show()
                         } else {
-                            val adapter = CanchaAdapter(listaCanchas)
+                            // Convertir de Cancha (modelo viejo) a CanchaEntity (modelo nuevo)
+                            val listaEntities = listaCanchas.map { cancha ->
+                                CanchaEntity(
+                                    id = cancha.id,
+                                    codigoFundo = cancha.codigo_fundo,
+                                    nombreFundo = cancha.nombre_fundo,
+                                    numeroCancha = cancha.numero_cancha,
+                                    fechaCreacion = cancha.fecha_creacion,
+                                    fechaActualizacion = cancha.fecha_actualizacion
+                                )
+                            }
+
+                            val adapter = CanchaAdapter(listaEntities)
                             rvCanchas.adapter = adapter
 
                             lifecycleScope.launch {
-                                localDataManager.guardarCanchasPorFundo(codigoFundo, listaCanchas)
+                                localDataManager.guardarCanchasPorFundo(codigoFundo, listaEntities)
                             }
                         }
                     } else {
@@ -52,7 +65,6 @@ class CanchasActivity : AppCompatActivity() {
                 }
 
                 override fun onFailure(call: Call<List<Cancha>>, t: Throwable) {
-
                     lifecycleScope.launch {
                         val canchasOffline = localDataManager.leerCanchasPorFundo(codigoFundo)
 
@@ -61,7 +73,7 @@ class CanchasActivity : AppCompatActivity() {
                             val adapter = CanchaAdapter(canchasOffline)
                             rvCanchas.adapter = adapter
                         } else {
-                            Toast.makeText(this@CanchasActivity, "Error de red y no hay datos guardados para este fundo.", Toast.LENGTH_LONG).show()
+                            Toast.makeText(this@CanchasActivity, "Error de red y no hay datos guardados.", Toast.LENGTH_LONG).show()
                         }
                     }
                 }

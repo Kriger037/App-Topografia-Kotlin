@@ -16,6 +16,7 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.MarkerOptions
+import com.felipe.topografiaapp.data.local.entity.PREntity
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -28,7 +29,7 @@ class MapaActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var localDataManager: LocalDataManager
     private val LOCATION_PERMISSION_REQUEST_CODE = 1000
 
-    override fun onCreate(savedInstanceState: Bundle?){
+    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_mapa)
 
@@ -46,31 +47,46 @@ class MapaActivity : AppCompatActivity(), OnMapReadyCallback {
         mapFragment.getMapAsync(this)
     }
 
-    override fun onMapReady(googleMap: GoogleMap){
+    override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
         mMap.mapType = GoogleMap.MAP_TYPE_SATELLITE
         mMap.uiSettings.isZoomControlsEnabled = true
-
         mMap.setMaxZoomPreference(21f)
 
         activarCapaUbicacion()
 
-        if (canchaId != -1){
+        if (canchaId != -1) {
             cargarPuntosEnMapa()
         } else {
             Toast.makeText(this, "Error: No se recibió el ID de la cancha", Toast.LENGTH_SHORT).show()
         }
     }
 
-    private fun cargarPuntosEnMapa(){
+    private fun cargarPuntosEnMapa() {
         RetrofitClient.api.obtenerPRs(canchaId).enqueue(object : Callback<List<PR>> {
-            override fun onResponse(call: Call<List<PR>>, response: Response<List<PR>>){
-                if (response.isSuccessful){
+            override fun onResponse(call: Call<List<PR>>, response: Response<List<PR>>) {
+                if (response.isSuccessful) {
                     val listaPrs = response.body() ?: emptyList()
 
-                    if (listaPrs.isNotEmpty()){
+                    if (listaPrs.isNotEmpty()) {
+                        // Convertir de PR (modelo viejo) a PREntity (modelo nuevo)
+                        val listaEntities = listaPrs.map { pr ->
+                            PREntity(
+                                id = pr.id,
+                                canchaId = canchaId,
+                                descriptor = pr.descriptor,
+                                norte = pr.norte,
+                                este = pr.este,
+                                cota = pr.cota,
+                                latitud = pr.latitud,
+                                longitud = pr.longitud,
+                                fechaCreacion = pr.fecha_creacion,
+                                fechaModificacion = pr.fecha_modificacion
+                            )
+                        }
+
                         lifecycleScope.launch {
-                            localDataManager.guardarPRsPorCancha(canchaId, listaPrs)
+                            localDataManager.guardarPRsPorCancha(canchaId, listaEntities)
                             dibujarMarcadores(listaPrs)
                         }
                     }
@@ -82,10 +98,34 @@ class MapaActivity : AppCompatActivity(), OnMapReadyCallback {
                     val prsOffline = localDataManager.leerPRsPorCancha(canchaId)
 
                     if (prsOffline.isNotEmpty()) {
-                        Toast.makeText(this@MapaActivity, "Sin señal. Dibujando puntos guardados.", Toast.LENGTH_LONG).show()
-                        dibujarMarcadores(prsOffline)
+                        Toast.makeText(
+                            this@MapaActivity,
+                            "Sin señal. Dibujando puntos guardados.",
+                            Toast.LENGTH_LONG
+                        ).show()
+
+                        // Convertir de PREntity a PR para que dibujarMarcadores lo acepte
+                        val prsParaMapa = prsOffline.map { entity ->
+                            PR(
+                                id = entity.id,
+                                descriptor = entity.descriptor,
+                                norte = entity.norte,
+                                este = entity.este,
+                                cota = entity.cota,
+                                latitud = entity.latitud,
+                                longitud = entity.longitud,
+                                fecha_creacion = entity.fechaCreacion,
+                                fecha_modificacion = entity.fechaModificacion
+                            )
+                        }
+
+                        dibujarMarcadores(prsParaMapa)
                     } else {
-                        Toast.makeText(this@MapaActivity, "Error en red y no hay datos guardados.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            this@MapaActivity,
+                            "Error en red y no hay datos guardados.",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
             }
@@ -96,8 +136,8 @@ class MapaActivity : AppCompatActivity(), OnMapReadyCallback {
         val builder = LatLngBounds.Builder()
         var puntosConCoordenadas = 0
 
-        for (pr in listaPrs){
-            if (pr.latitud != null && pr.longitud != null){
+        for (pr in listaPrs) {
+            if (pr.latitud != null && pr.longitud != null) {
                 val posicion = LatLng(pr.latitud, pr.longitud)
                 mMap.addMarker(
                     MarkerOptions()
@@ -110,19 +150,22 @@ class MapaActivity : AppCompatActivity(), OnMapReadyCallback {
             }
         }
 
-        if (puntosConCoordenadas > 0){
+        if (puntosConCoordenadas > 0) {
             val bounds = builder.build()
-            val padding = 150
-            mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, padding))
-        } else{
-            Toast.makeText(this@MapaActivity, "Los PRs no tienen coordenadas geográficas", Toast.LENGTH_LONG).show()
+            mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 150))
+        } else {
+            Toast.makeText(
+                this@MapaActivity,
+                "Los PRs no tienen coordenadas geográficas",
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
 
     private fun activarCapaUbicacion() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-            ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-
+            ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        ) {
             mMap.isMyLocationEnabled = true
             mMap.uiSettings.isMyLocationButtonEnabled = true
         } else {
@@ -134,7 +177,11 @@ class MapaActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -145,8 +192,8 @@ class MapaActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    override fun onSupportNavigateUp(): Boolean{
+    override fun onSupportNavigateUp(): Boolean {
         onBackPressedDispatcher.onBackPressed()
-        return(true)
+        return true
     }
 }

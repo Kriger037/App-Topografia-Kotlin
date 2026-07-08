@@ -44,3 +44,125 @@ Para proteger la integridad del proyecto, **la dirección IP del servidor y la A
 
 ## Notas de Arquitectura
 El proyecto utiliza una arquitectura Cliente-Servidor mediante API REST para el MVP. Se está diseñando con la visión de una futura implementación *Offline-First* con base de datos local (Room) para zonas sin cobertura de red.
+```
+App-Topografia-Kotlin
+├─ .idea
+│  ├─ .name
+│  ├─ AndroidProjectSystem.xml
+│  ├─ compiler.xml
+│  ├─ deploymentTargetSelector.xml
+│  ├─ deviceManager.xml
+│  ├─ gradle.xml
+│  ├─ misc.xml
+│  ├─ runConfigurations.xml
+│  └─ vcs.xml
+├─ .kotlin
+│  └─ sessions
+├─ app
+│  ├─ proguard-rules.pro
+│  └─ src
+│     ├─ androidTest
+│     │  └─ java
+│     │     └─ com
+│     │        └─ felipe
+│     │           └─ topografiaapp
+│     │              └─ ExampleInstrumentedTest.kt
+│     ├─ main
+│     │  ├─ AndroidManifest.xml
+│     │  ├─ java
+│     │  │  └─ com
+│     │  │     └─ felipe
+│     │  │        └─ topografiaapp
+│     │  │           ├─ ApiService.kt
+│     │  │           ├─ AppDatabase.kt
+│     │  │           ├─ Cancha.kt
+│     │  │           ├─ CanchaAdapter.kt
+│     │  │           ├─ CanchaDao.kt
+│     │  │           ├─ CanchasActivity.kt
+│     │  │           ├─ Fundo.kt
+│     │  │           ├─ FundoAdapter.kt
+│     │  │           ├─ FundoDao.kt
+│     │  │           ├─ LocalDataManager.kt
+│     │  │           ├─ LoginActivity.kt
+│     │  │           ├─ LoginResponse.kt
+│     │  │           ├─ MainActivity.kt
+│     │  │           ├─ MapaActivity.kt
+│     │  │           ├─ PR.kt
+│     │  │           ├─ PRAdapter.kt
+│     │  │           ├─ PRDao.kt
+│     │  │           ├─ PRsActivity.kt
+│     │  │           ├─ RetrofitClient.kt
+│     │  │           └─ Usuario.kt
+│     │  └─ res
+│     │     ├─ drawable
+│     │     │  ├─ ic_launcher_background.xml
+│     │     │  └─ ic_launcher_foreground.xml
+│     │     ├─ layout
+│     │     │  ├─ activity_canchas.xml
+│     │     │  ├─ activity_login.xml
+│     │     │  ├─ activity_main.xml
+│     │     │  ├─ activity_mapa.xml
+│     │     │  ├─ activity_prs.xml
+│     │     │  ├─ item_cancha.xml
+│     │     │  ├─ item_fundo.xml
+│     │     │  └─ item_pr.xml
+│     │     ├─ menu
+│     │     │  └─ menu_main.xml
+│     │     ├─ mipmap-anydpi-v26
+│     │     │  ├─ ic_launcher.xml
+│     │     │  └─ ic_launcher_round.xml
+│     │     ├─ mipmap-hdpi
+│     │     │  ├─ ic_launcher.webp
+│     │     │  └─ ic_launcher_round.webp
+│     │     ├─ mipmap-mdpi
+│     │     │  ├─ ic_launcher.webp
+│     │     │  └─ ic_launcher_round.webp
+│     │     ├─ mipmap-xhdpi
+│     │     │  ├─ ic_launcher.webp
+│     │     │  └─ ic_launcher_round.webp
+│     │     ├─ mipmap-xxhdpi
+│     │     │  ├─ ic_launcher.webp
+│     │     │  └─ ic_launcher_round.webp
+│     │     ├─ mipmap-xxxhdpi
+│     │     │  ├─ ic_launcher.webp
+│     │     │  └─ ic_launcher_round.webp
+│     │     ├─ values
+│     │     │  ├─ colors.xml
+│     │     │  ├─ strings.xml
+│     │     │  └─ themes.xml
+│     │     ├─ values-night
+│     │     │  └─ themes.xml
+│     │     └─ xml
+│     │        ├─ backup_rules.xml
+│     │        └─ data_extraction_rules.xml
+│     └─ test
+│        └─ java
+│           └─ com
+│              └─ felipe
+│                 └─ topografiaapp
+│                    └─ ExampleUnitTest.kt
+├─ backend_api
+│  ├─ composer.json
+│  ├─ composer.lock
+│  ├─ conexion.php
+│  ├─ database_schema.sql
+│  ├─ formulario_upload.php
+│  ├─ get_canchas_ajax.php
+│  ├─ login.php
+│  ├─ obtener_canchas.php
+│  ├─ obtener_fundos.php
+│  ├─ obtener_prs.php
+│  ├─ procesar_upload.php
+│  └─ test_api.php
+├─ gradle
+│  ├─ gradle-daemon-jvm.properties
+│  ├─ libs.versions.toml
+│  └─ wrapper
+│     ├─ gradle-wrapper.jar
+│     └─ gradle-wrapper.properties
+├─ gradle.properties
+├─ gradlew
+├─ gradlew.bat
+└─ README.md
+
+```

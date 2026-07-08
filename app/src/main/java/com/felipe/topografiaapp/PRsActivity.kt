@@ -1,88 +1,81 @@
 package com.felipe.topografiaapp
 
+import android.content.Intent
 import android.os.Bundle
-import android.widget.Button
-import android.widget.TextView
-import android.widget.Toast
+import android.view.View
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.felipe.topografiaapp.databinding.ActivityPrsBinding
+import com.felipe.topografiaapp.domain.model.CoordenadaResult
+import com.felipe.topografiaapp.domain.model.PR
+import com.felipe.topografiaapp.presentation.common.UiState
+import com.felipe.topografiaapp.presentation.prs.PRsViewModel
+import com.google.android.material.snackbar.Snackbar
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 
+@AndroidEntryPoint
 class PRsActivity : AppCompatActivity() {
-    override fun onCreate(savedInstanceState: Bundle?){
+
+    private val viewModel: PRsViewModel by viewModels()
+    private lateinit var binding: ActivityPrsBinding
+
+    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_prs)
+        binding = ActivityPrsBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        val canchaId = intent.getIntExtra("CANCHA_ID", -1)
-        val numeroCancha = intent.getStringExtra("NUMERO_CANCHA") ?: "Cancha Desconocida"
-        val codigoFundo = intent.getStringExtra("CODIGO_FUNDO") ?: "Sin Código"
-        val nombreFundo = intent.getStringExtra("NOMBRE_FUNDO") ?: "Fundo Desconocido"
+        val canchaId    = intent.getIntExtra("CANCHA_ID", -1)
+        val numeroCancha = intent.getStringExtra("NUMERO_CANCHA") ?: ""
+        val codigoFundo  = intent.getStringExtra("CODIGO_FUNDO") ?: ""
+        val nombreFundo  = intent.getStringExtra("NOMBRE_FUNDO") ?: ""
 
-        val localDataManager = LocalDataManager(this)
-
-        val miToolbar = findViewById<Toolbar>(R.id.toolbarPRs)
-        setSupportActionBar(miToolbar)
+        setSupportActionBar(binding.toolbarPRs)
         supportActionBar?.title = "$codigoFundo - $nombreFundo"
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        val tvTitulo = findViewById<TextView>(R.id.tvTituloCancha)
-        tvTitulo.text = "PRs $numeroCancha"
+        binding.tvTituloCancha.text = "PRs $numeroCancha"
+        binding.rvPRs.layoutManager = LinearLayoutManager(this)
 
-        val btnVerMapa = findViewById<Button>(R.id.btnVerMapa)
-        btnVerMapa.setOnClickListener {
-            val intent = android.content.Intent(this, MapaActivity::class.java)
-            intent.putExtra("CANCHA_ID", canchaId)
-            startActivity(intent)
+        observarEstados()
+
+        if (canchaId != -1) viewModel.cargarPRs(canchaId)
+
+        binding.btnVerMapa.setOnClickListener {
+            startActivity(Intent(this, MapaActivity::class.java)
+                .putExtra("CANCHA_ID", canchaId))
+        }
+    }
+
+    private fun observarEstados() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.prsState.collect { estado ->
+                    binding.progressBarPRs.visibility =
+                        if (estado is UiState.Loading) View.VISIBLE else View.GONE
+                    when (estado) {
+                        is UiState.Loading -> { }
+                        is UiState.Success -> {
+                            binding.rvPRs.adapter = PRAdapter(estado.data)
+                        }
+                        is UiState.Error -> {
+                            Snackbar.make(binding.root, estado.mensaje, Snackbar.LENGTH_LONG).show()
+                        }
+                    }
+                }
+            }
         }
 
-        val rvPRS = findViewById<RecyclerView>(R.id.rvPRs)
-        rvPRS.layoutManager = LinearLayoutManager(this)
-
-        if (canchaId != -1){
-            RetrofitClient.api.obtenerPRs(canchaId)
-                .enqueue(object : Callback<List<PR>> {
-                    override fun onResponse(call: Call<List<PR>>, response: Response<List<PR>>){
-                        if (response.isSuccessful){
-                            val listaPRs = response.body() ?: emptyList()
-
-                            if (listaPRs.isEmpty()){
-                                Toast.makeText(this@PRsActivity, "Aun no hay PRs en esta cancha.", Toast.LENGTH_LONG).show()
-                            } else{
-                                val adapter = PRAdapter(listaPRs)
-                                rvPRS.adapter = adapter
-
-                                lifecycleScope.launch {
-                                    localDataManager.guardarPRsPorCancha(canchaId, listaPRs)
-                                }
-                            }
-                        } else {
-                            Toast.makeText(this@PRsActivity, "Error en el servidor: ${response.code()}", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-
-                    override fun onFailure(call: Call<List<PR>>, t: Throwable){
-
-                        lifecycleScope.launch {
-                            val prsOffline = localDataManager.leerPRsPorCancha(canchaId)
-
-                            if (prsOffline.isNotEmpty()) {
-                                Toast.makeText(this@PRsActivity, "Sin señal. Mostrando PRs guardados.", Toast.LENGTH_LONG).show()
-                                val adapter = PRAdapter(prsOffline)
-                                rvPRS.adapter = adapter
-                            } else {
-                                Toast.makeText(this@PRsActivity, "Error de red y no hay datos guardados para esta cancha.", Toast.LENGTH_LONG).show()
-                            }
-                        }
-                    }
-                })
-        } else {
-            Toast.makeText(this, "Error: No se recibió el ID de la cancha.", Toast.LENGTH_SHORT).show()
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.estaOffline.collect { offline ->
+                    binding.bannerOffline.visibility = if (offline) View.VISIBLE else View.GONE
+                }
+            }
         }
     }
 

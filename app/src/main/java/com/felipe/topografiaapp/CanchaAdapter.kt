@@ -9,12 +9,15 @@ import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import com.felipe.topografiaapp.data.local.entity.CanchaEntity
 import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import com.felipe.topografiaapp.PR
+import com.felipe.topografiaapp.data.local.entity.PREntity
 
-class CanchaAdapter(private val listaCanchas: List<Cancha>) :
+class CanchaAdapter(private val listaCanchas: List<CanchaEntity>) :
     RecyclerView.Adapter<CanchaAdapter.CanchaViewHolder>() {
 
     class CanchaViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -36,13 +39,13 @@ class CanchaAdapter(private val listaCanchas: List<Cancha>) :
     override fun onBindViewHolder(holder: CanchaViewHolder, position: Int) {
         val canchaActual = listaCanchas[position]
 
-        holder.tvNumeroCancha.text = canchaActual.numero_cancha
-        holder.tvFechaActualizacion.text = "Última mod: ${canchaActual.fecha_actualizacion}"
+        holder.tvNumeroCancha.text = canchaActual.numeroCancha
+        holder.tvFechaActualizacion.text = "Última mod: ${canchaActual.fechaActualizacion}"
 
         holder.itemView.setOnClickListener { view ->
             val intent = android.content.Intent(view.context, PRsActivity::class.java)
             intent.putExtra("CANCHA_ID", canchaActual.id)
-            intent.putExtra("NUMERO_CANCHA", canchaActual.numero_cancha)
+            intent.putExtra("NUMERO_CANCHA", canchaActual.numeroCancha)
 
             val actividadActual = view.context as android.app.Activity
             intent.putExtra("CODIGO_FUNDO", actividadActual.intent.getStringExtra("CODIGO_FUNDO"))
@@ -64,9 +67,25 @@ class CanchaAdapter(private val listaCanchas: List<Cancha>) :
                             val listaPRs = response.body()
                             if (listaPRs != null && listaPRs.isNotEmpty()) {
 
+                                // Convertir de PR (modelo viejo) a PREntity (modelo nuevo)
+                                val listaEntities = listaPRs.map { pr ->
+                                    PREntity(
+                                        id = pr.id,
+                                        canchaId = canchaActual.id,
+                                        descriptor = pr.descriptor,
+                                        norte = pr.norte,
+                                        este = pr.este,
+                                        cota = pr.cota,
+                                        latitud = pr.latitud,
+                                        longitud = pr.longitud,
+                                        fechaCreacion = pr.fecha_creacion,
+                                        fechaModificacion = pr.fecha_modificacion
+                                    )
+                                }
+
                                 (contexto as? LifecycleOwner)?.lifecycleScope?.launch {
-                                    localDataManager.guardarPRsPorCancha(canchaActual.id, listaPRs)
-                                    Toast.makeText(contexto, "¡Listo! Puntos de ${canchaActual.numero_cancha} guardados.", Toast.LENGTH_LONG).show()
+                                    localDataManager.guardarPRsPorCancha(canchaActual.id, listaEntities)
+                                    Toast.makeText(contexto, "¡Listo! Puntos de ${canchaActual.numeroCancha} guardados.", Toast.LENGTH_LONG).show()
                                 }
 
                             } else {
