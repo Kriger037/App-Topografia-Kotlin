@@ -28,16 +28,23 @@ class PRsViewModel @Inject constructor(
     fun cargarPRs(canchaId: Int) {
         viewModelScope.launch {
             _prsState.value = UiState.Loading
+            android.util.Log.d("PRsViewModel", "Iniciando carga para canchaId=$canchaId")
             try {
                 obtenerPRsUseCase.sincronizar(canchaId)
                 _estaOffline.value = false
+                android.util.Log.d("PRsViewModel", "Sincronización completada")
             } catch (e: Exception) {
                 _estaOffline.value = true
+                android.util.Log.e("PRsViewModel", "Error sincronizando: ${e.message}")
             }
 
             obtenerPRsUseCase(canchaId)
-                .catch { e -> _prsState.value = UiState.Error(e.message ?: "Error") }
+                .catch { e ->
+                    android.util.Log.e("PRsViewModel", "Error en Flow: ${e.message}")
+                    _prsState.value = UiState.Error(e.message ?: "Error")
+                }
                 .collect { lista ->
+                    android.util.Log.d("PRsViewModel", "Flow emitió lista con ${lista.size} elementos")
                     _prsState.value = if (lista.isEmpty()) {
                         UiState.Error("Esta cancha no tiene PRs registrados")
                     } else {

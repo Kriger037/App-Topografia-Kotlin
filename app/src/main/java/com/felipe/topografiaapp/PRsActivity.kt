@@ -60,7 +60,9 @@ class PRsActivity : AppCompatActivity() {
                     when (estado) {
                         is UiState.Loading -> { }
                         is UiState.Success -> {
+                            android.util.Log.d("PRsActivity", "Asignando adapter con ${estado.data.size} PRs")
                             binding.rvPRs.adapter = PRAdapter(estado.data)
+                            android.util.Log.d("PRsActivity", "Adapter asignado, itemCount=${binding.rvPRs.adapter?.itemCount}")
                         }
                         is UiState.Error -> {
                             Snackbar.make(binding.root, estado.mensaje, Snackbar.LENGTH_LONG).show()
