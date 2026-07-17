@@ -2,114 +2,74 @@ package com.felipe.topografiaapp
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
-import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.felipe.topografiaapp.databinding.ActivityMainBinding
+import com.felipe.topografiaapp.domain.model.Fundo
+import com.felipe.topografiaapp.presentation.common.UiState
+import com.felipe.topografiaapp.presentation.fundos.FundosViewModel
+import com.google.android.material.snackbar.Snackbar
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-import com.felipe.topografiaapp.data.local.entity.FundoEntity
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var localDataManager: LocalDataManager
+    private lateinit var binding: ActivityMainBinding
+    private val viewModel: FundosViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        localDataManager = LocalDataManager(this)
+        setSupportActionBar(binding.toolbarMain)
 
-        val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbarMain)
-        setSupportActionBar(toolbar)
-
-        val tvUsuario = findViewById<TextView>(R.id.tvUsuarioLogueado)
         val sharedPref = getSharedPreferences("SesionTopografia", MODE_PRIVATE)
         val nombreGuardado = sharedPref.getString("nombre_usuario", "Desconocido")
-        tvUsuario.text = "Usuario: $nombreGuardado"
+        binding.tvUsuarioLogueado.text = "Usuario: $nombreGuardado"
 
-        val rvFundos = findViewById<RecyclerView>(R.id.rvFundos)
-        rvFundos.layoutManager = LinearLayoutManager(this)
+        binding.rvFundos.layoutManager = LinearLayoutManager(this)
 
-        RetrofitClient.api.obtenerUsuarios()
-            .enqueue(object : Callback<List<Usuario>> {
-                override fun onResponse(call: Call<List<Usuario>>, response: Response<List<Usuario>>) {
-                    if (response.isSuccessful) {
-                        val usuarios = response.body()
-                        Log.d("API_TEST", "Conexión exitosa. Usuarios encontrados: ${usuarios?.size}")
-                    } else {
-                        Log.e("API_TEST", "Error en la respuesta: ${response.code()}")
-                    }
-                }
+        observarEstados()
+        viewModel.cargarFundos()
+    }
 
-                override fun onFailure(call: Call<List<Usuario>>, t: Throwable) {
-                    Log.e("API_TEST", "Falló la conexión: ${t.message}")
-                }
-            })
-
-        RetrofitClient.api.obtenerFundos()
-            .enqueue(object : Callback<List<Fundo>> {
-                override fun onResponse(call: Call<List<Fundo>>, response: Response<List<Fundo>>) {
-                    if (response.isSuccessful) {
-                        val fundos = response.body() ?: emptyList()
-                        Log.d("API_FUNDOS", "Fundos encontrados: ${fundos.size}")
-
-                        // Convertir de Fundo (modelo viejo) a FundoEntity (modelo nuevo)
-                        val listaEntities = fundos.map { fundo ->
-                            FundoEntity(
-                                id = fundo.id,
-                                codigoFundo = fundo.codigo_fundo,
-                                nombreFundo = fundo.nombre_fundo,
-                                comuna = fundo.comuna
-                            )
+    private fun observarEstados() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.fundosState.collect { estado ->
+                    when (estado) {
+                        is UiState.Loading -> {}
+                        is UiState.Success -> {
+                            binding.rvFundos.adapter = FundoAdapter(estado.data)
                         }
-
-                        lifecycleScope.launch {
-                            localDataManager.guardarFundos(listaEntities)
-                        }
-
-                        // FundoAdapter sigue recibiendo el modelo viejo por ahora
-                        val adaptador = FundoAdapter(fundos)
-                        rvFundos.adapter = adaptador
-
-                    } else {
-                        Log.e("API_FUNDOS", "Error en la respuesta: ${response.code()}")
-                    }
-                }
-
-                override fun onFailure(call: Call<List<Fundo>>, t: Throwable) {
-                    Log.e("API_FUNDOS", "Falló la red: ${t.message}")
-
-                    lifecycleScope.launch {
-                        val fundosOffline = localDataManager.leerFundos()
-                        if (fundosOffline.isNotEmpty()) {
-                            Toast.makeText(
-                                this@MainActivity,
-                                "Modo Offline: Cargando fundos guardados",
-                                Toast.LENGTH_LONG
-                            ).show()
-
-                            // Convertir de FundoEntity a Fundo para que FundoAdapter lo acepte
-                            val fundosParaAdapter = fundosOffline.map { entity ->
-                                Fundo(
-                                    id = entity.id,
-                                    codigo_fundo = entity.codigoFundo,
-                                    nombre_fundo = entity.nombreFundo,
-                                    comuna = entity.comuna
-                                )
-                            }
-
-                            val adaptador = FundoAdapter(fundosParaAdapter)
-                            rvFundos.adapter = adaptador
+                        is UiState.Error -> {
+                            Snackbar.make(binding.root, estado.mensaje, Snackbar.LENGTH_LONG).show()
                         }
                     }
                 }
-            })
+            }
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.estaOffline.collect { offline ->
+                    if (offline) {
+                        Toast.makeText(
+                            this@MainActivity,
+                            "Sin señal. Mostrando fundos guardados.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            }
+        }
     }
 
     override fun onCreateOptionsMenu(menu: android.view.Menu?): Boolean {

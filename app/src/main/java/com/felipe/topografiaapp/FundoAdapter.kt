@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.felipe.topografiaapp.domain.model.Fundo
 
 // El Adaptador recibe como parametro la lista de fundos descargados de MySQL
 class FundoAdapter(private val listaFundos: List<Fundo>) : RecyclerView.Adapter<FundoAdapter.FundoViewHolder>() {
@@ -22,15 +23,15 @@ class FundoAdapter(private val listaFundos: List<Fundo>) : RecyclerView.Adapter<
     override fun onBindViewHolder(holder: FundoViewHolder, position: Int){
         val fundoActual = listaFundos[position]
 
-        holder.tvNombreFundo.text = fundoActual.nombre_fundo
-        holder.tvCodigoFundo.text = "Código: ${fundoActual.codigo_fundo}"
+        holder.tvNombreFundo.text = fundoActual.nombreFundo
+        holder.tvCodigoFundo.text = "Código: ${fundoActual.codigoFundo}"
         holder.tvComuna.text = "Comuna: ${fundoActual.comuna}"
 
         holder.itemView.setOnClickListener { view ->
             val intent = android.content.Intent(view.context, CanchasActivity::class.java)
 
-            intent.putExtra("CODIGO_FUNDO", fundoActual.codigo_fundo)
-            intent.putExtra("NOMBRE_FUNDO", fundoActual.nombre_fundo)
+            intent.putExtra("CODIGO_FUNDO", fundoActual.codigoFundo)
+            intent.putExtra("NOMBRE_FUNDO", fundoActual.nombreFundo)
 
             view.context.startActivity(intent)
         }

@@ -2,82 +2,120 @@ package com.felipe.topografiaapp
 
 import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.felipe.topografiaapp.data.local.entity.PREntity
+import com.felipe.topografiaapp.databinding.ActivityCanchasBinding
+import com.felipe.topografiaapp.domain.model.Cancha
+import com.felipe.topografiaapp.presentation.canchas.CanchasViewModel
+import com.felipe.topografiaapp.presentation.common.UiState
+import com.google.android.material.snackbar.Snackbar
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-import com.felipe.topografiaapp.data.local.entity.CanchaEntity
 
+@AndroidEntryPoint
 class CanchasActivity : AppCompatActivity() {
+
+    private lateinit var binding: ActivityCanchasBinding
+    private val viewModel: CanchasViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_canchas)
+        binding = ActivityCanchasBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         val codigoFundo = intent.getStringExtra("CODIGO_FUNDO") ?: "Sin Código"
         val nombreFundo = intent.getStringExtra("NOMBRE_FUNDO") ?: "Fundo Desconocido"
 
-        val localDataManager = LocalDataManager(this)
-
-        val miToolbar = findViewById<Toolbar>(R.id.toolbarCanchas)
-        setSupportActionBar(miToolbar)
+        setSupportActionBar(binding.toolbarCanchas)
         supportActionBar?.title = "Canchas fundo: $codigoFundo - $nombreFundo"
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        val rvCanchas = findViewById<RecyclerView>(R.id.rvCanchas)
-        rvCanchas.layoutManager = LinearLayoutManager(this)
+        binding.rvCanchas.layoutManager = LinearLayoutManager(this)
 
-        RetrofitClient.api.obtenerCanchas(codigoFundo)
-            .enqueue(object : Callback<List<Cancha>> {
-                override fun onResponse(call: Call<List<Cancha>>, response: Response<List<Cancha>>) {
-                    if (response.isSuccessful) {
-                        val listaCanchas = response.body() ?: emptyList()
+        observarEstados()
+        viewModel.cargarCanchas(codigoFundo)
+    }
 
-                        if (listaCanchas.isEmpty()) {
-                            Toast.makeText(this@CanchasActivity, "Aún no hay canchas registradas.", Toast.LENGTH_LONG).show()
-                        } else {
-                            // Convertir de Cancha (modelo viejo) a CanchaEntity (modelo nuevo)
-                            val listaEntities = listaCanchas.map { cancha ->
-                                CanchaEntity(
-                                    id = cancha.id,
-                                    codigoFundo = cancha.codigo_fundo,
-                                    nombreFundo = cancha.nombre_fundo,
-                                    numeroCancha = cancha.numero_cancha,
-                                    fechaCreacion = cancha.fecha_creacion,
-                                    fechaActualizacion = cancha.fecha_actualizacion
-                                )
-                            }
-
-                            val adapter = CanchaAdapter(listaEntities)
-                            rvCanchas.adapter = adapter
-
-                            lifecycleScope.launch {
-                                localDataManager.guardarCanchasPorFundo(codigoFundo, listaEntities)
+    private fun observarEstados() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.canchasState.collect { estado ->
+                    when (estado) {
+                        is UiState.Loading -> {}
+                        is UiState.Success -> {
+                            binding.rvCanchas.adapter = CanchaAdapter(estado.data) { cancha ->
+                                descargarPRsDeCancha(cancha)
                             }
                         }
-                    } else {
-                        Toast.makeText(this@CanchasActivity, "Error en el servidor: ${response.code()}", Toast.LENGTH_SHORT).show()
-                    }
-                }
-
-                override fun onFailure(call: Call<List<Cancha>>, t: Throwable) {
-                    lifecycleScope.launch {
-                        val canchasOffline = localDataManager.leerCanchasPorFundo(codigoFundo)
-
-                        if (canchasOffline.isNotEmpty()) {
-                            Toast.makeText(this@CanchasActivity, "Sin señal. Mostrando canchas guardadas.", Toast.LENGTH_LONG).show()
-                            val adapter = CanchaAdapter(canchasOffline)
-                            rvCanchas.adapter = adapter
-                        } else {
-                            Toast.makeText(this@CanchasActivity, "Error de red y no hay datos guardados.", Toast.LENGTH_LONG).show()
+                        is UiState.Error -> {
+                            Snackbar.make(binding.root, estado.mensaje, Snackbar.LENGTH_LONG).show()
                         }
                     }
                 }
-            })
+            }
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.estaOffline.collect { offline ->
+                    if (offline) {
+                        Snackbar.make(
+                            binding.root,
+                            "Sin señal. Mostrando canchas guardadas.",
+                            Snackbar.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun descargarPRsDeCancha(cancha: Cancha) {
+        Toast.makeText(this, "Descargando puntos para terreno...", Toast.LENGTH_SHORT).show()
+        lifecycleScope.launch {
+            try {
+                val listaDtos = RetrofitClient.api.obtenerPRs(cancha.id)
+                if (listaDtos.isNotEmpty()) {
+                    val listaEntities = listaDtos.map { dto ->
+                        PREntity(
+                            id = dto.id,
+                            canchaId = cancha.id,
+                            descriptor = dto.descriptor,
+                            norte = dto.norte,
+                            este = dto.este,
+                            cota = dto.cota,
+                            latitud = dto.latitud,
+                            longitud = dto.longitud,
+                            fechaCreacion = dto.fecha_creacion,
+                            fechaModificacion = dto.fecha_modificacion
+                        )
+                    }
+                    viewModel.guardarPRsLocalmente(listaEntities, cancha.id)
+                    Toast.makeText(
+                        this@CanchasActivity,
+                        "¡Listo! Puntos de ${cancha.numeroCancha} guardados.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                } else {
+                    Toast.makeText(
+                        this@CanchasActivity,
+                        "Esta cancha no tiene puntos topográficos.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(
+                    this@CanchasActivity,
+                    "Error al descargar: ${e.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
     }
 
     override fun onSupportNavigateUp(): Boolean {

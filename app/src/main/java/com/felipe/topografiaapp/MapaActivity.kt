@@ -4,11 +4,13 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
+import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -16,24 +18,23 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.MarkerOptions
-import com.felipe.topografiaapp.data.local.entity.PREntity
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import com.felipe.topografiaapp.domain.model.PR
+import com.felipe.topografiaapp.presentation.common.UiState
+import com.felipe.topografiaapp.presentation.mapa.MapaViewModel
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 
+@AndroidEntryPoint
 class MapaActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var mMap: GoogleMap
     private var canchaId: Int = -1
-
-    private lateinit var localDataManager: LocalDataManager
+    private val viewModel: MapaViewModel by viewModels()
     private val LOCATION_PERMISSION_REQUEST_CODE = 1000
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_mapa)
-
-        localDataManager = LocalDataManager(this)
 
         val miToolbar = findViewById<Toolbar>(R.id.toolbarMapa)
         setSupportActionBar(miToolbar)
@@ -56,80 +57,27 @@ class MapaActivity : AppCompatActivity(), OnMapReadyCallback {
         activarCapaUbicacion()
 
         if (canchaId != -1) {
-            cargarPuntosEnMapa()
+            observarEstados()
+            viewModel.cargarPRsParaMapa(canchaId)
         } else {
             Toast.makeText(this, "Error: No se recibió el ID de la cancha", Toast.LENGTH_SHORT).show()
         }
     }
 
-    private fun cargarPuntosEnMapa() {
-        RetrofitClient.api.obtenerPRs(canchaId).enqueue(object : Callback<List<PR>> {
-            override fun onResponse(call: Call<List<PR>>, response: Response<List<PR>>) {
-                if (response.isSuccessful) {
-                    val listaPrs = response.body() ?: emptyList()
-
-                    if (listaPrs.isNotEmpty()) {
-                        // Convertir de PR (modelo viejo) a PREntity (modelo nuevo)
-                        val listaEntities = listaPrs.map { pr ->
-                            PREntity(
-                                id = pr.id,
-                                canchaId = canchaId,
-                                descriptor = pr.descriptor,
-                                norte = pr.norte,
-                                este = pr.este,
-                                cota = pr.cota,
-                                latitud = pr.latitud,
-                                longitud = pr.longitud,
-                                fechaCreacion = pr.fecha_creacion,
-                                fechaModificacion = pr.fecha_modificacion
-                            )
-                        }
-
-                        lifecycleScope.launch {
-                            localDataManager.guardarPRsPorCancha(canchaId, listaEntities)
-                            dibujarMarcadores(listaPrs)
+    private fun observarEstados() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.prsState.collect { estado ->
+                    when (estado) {
+                        is UiState.Loading -> {}
+                        is UiState.Success -> dibujarMarcadores(estado.data)
+                        is UiState.Error -> {
+                            Toast.makeText(this@MapaActivity, estado.mensaje, Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
             }
-
-            override fun onFailure(call: Call<List<PR>>, t: Throwable) {
-                lifecycleScope.launch {
-                    val prsOffline = localDataManager.leerPRsPorCancha(canchaId)
-
-                    if (prsOffline.isNotEmpty()) {
-                        Toast.makeText(
-                            this@MapaActivity,
-                            "Sin señal. Dibujando puntos guardados.",
-                            Toast.LENGTH_LONG
-                        ).show()
-
-                        // Convertir de PREntity a PR para que dibujarMarcadores lo acepte
-                        val prsParaMapa = prsOffline.map { entity ->
-                            PR(
-                                id = entity.id,
-                                descriptor = entity.descriptor,
-                                norte = entity.norte,
-                                este = entity.este,
-                                cota = entity.cota,
-                                latitud = entity.latitud,
-                                longitud = entity.longitud,
-                                fecha_creacion = entity.fechaCreacion,
-                                fecha_modificacion = entity.fechaModificacion
-                            )
-                        }
-
-                        dibujarMarcadores(prsParaMapa)
-                    } else {
-                        Toast.makeText(
-                            this@MapaActivity,
-                            "Error en red y no hay datos guardados.",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-            }
-        })
+        }
     }
 
     private fun dibujarMarcadores(listaPrs: List<PR>) {
@@ -154,11 +102,7 @@ class MapaActivity : AppCompatActivity(), OnMapReadyCallback {
             val bounds = builder.build()
             mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 150))
         } else {
-            Toast.makeText(
-                this@MapaActivity,
-                "Los PRs no tienen coordenadas geográficas",
-                Toast.LENGTH_LONG
-            ).show()
+            Toast.makeText(this, "Los PRs no tienen coordenadas geográficas", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -177,11 +121,7 @@ class MapaActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {

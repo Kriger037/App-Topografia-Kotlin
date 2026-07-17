@@ -14,7 +14,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CanchasViewModel @Inject constructor(
-    private val obtenerCanchasUseCase: ObtenerCanchasUseCase
+    private val obtenerCanchasUseCase: ObtenerCanchasUseCase,
+    private val prDao: com.felipe.topografiaapp.data.local.dao.PRDao
 ) : ViewModel() {
 
     private val _canchasState = MutableStateFlow<UiState<List<Cancha>>>(UiState.Loading)
@@ -39,6 +40,16 @@ class CanchasViewModel @Inject constructor(
                 _estaOffline.value = false
             } catch (e: Exception){
                 _estaOffline.value = true
+            }
+        }
+    }
+
+    fun guardarPRsLocalmente(entities: List<com.felipe.topografiaapp.data.local.entity.PREntity>, canchaId: Int) {
+        viewModelScope.launch {
+            try {
+                prDao.insertarPRs(entities)
+            } catch (e: Exception) {
+                android.util.Log.e("CanchasViewModel", "Error guardando PRs: ${e.message}")
             }
         }
     }
