@@ -2,16 +2,8 @@ package com.felipe.topografiaapp.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.Index
 
-// ---------------------------------------------------------------------------
-// Entidades Room — versión 2 de la base de datos
-// Cambios respecto a la versión 1:
-//   FundoEntity   → agrega lastSyncAt
-//   CanchaEntity  → agrega huso, lastSyncAt
-//   PREntity      → agrega isDirty, lastSyncAt
-//
-// IMPORTANTE: estos cambios requieren una Migration 1→2 en AppDatabase.kt
-// ---------------------------------------------------------------------------
 
 @Entity(tableName = "tabla_fundos")
 data class FundoEntity(
@@ -34,9 +26,12 @@ data class CanchaEntity(
     val lastSyncAt: Long = System.currentTimeMillis()
 )
 
-@Entity(tableName = "tabla_prs")
+@Entity(
+    tableName = "tabla_prs",
+    indices = [Index(value = ["canchaId", "descriptor"], unique = true)]
+)
 data class PREntity(
-    @PrimaryKey val id: Int,
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val canchaId: Int,
     val descriptor: String,
     val norte: Double,
@@ -46,6 +41,6 @@ data class PREntity(
     val longitud: Double?,
     val fechaCreacion: String,
     val fechaModificacion: String,
-    val isDirty: Boolean = false,                      // pendiente de sync con servidor
+    val isDirty: Boolean = false,
     val lastSyncAt: Long = System.currentTimeMillis()
 )

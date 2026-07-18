@@ -115,6 +115,18 @@
         </FrameLayout>
 
         <Button
+            android:id="@+id/btnImportarArchivo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Importar archivo de coordenadas"
+            android:backgroundTint="#1976D2"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:padding="12dp"
+            android:layout_marginBottom="8dp"
+            app:cornerRadius="8dp"/>
+
+        <Button
             android:id="@+id/btnVerMapa"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

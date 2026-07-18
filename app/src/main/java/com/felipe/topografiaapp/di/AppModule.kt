@@ -1,7 +1,7 @@
 package com.felipe.topografiaapp.di
 
 import android.content.Context
-import com.felipe.topografiaapp.AppDatabase
+import com.felipe.topografiaapp.data.local.AppDatabase
 import com.felipe.topografiaapp.RetrofitClient
 import com.felipe.topografiaapp.data.local.dao.CanchaDao
 import com.felipe.topografiaapp.data.local.dao.FundoDao

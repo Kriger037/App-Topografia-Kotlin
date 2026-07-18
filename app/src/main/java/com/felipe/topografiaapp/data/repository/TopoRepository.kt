@@ -59,8 +59,13 @@ class TopoRepository @Inject constructor(
         }
     }
 
-     override fun obtenerPRsPorCancha(canchaId: Int): Flow<List<PR>> =
-        prDao.obtenerPorCanchaFlow(canchaId).map { entities -> entities.map { it.toDomain() } }
+    override fun obtenerPRsPorCancha(canchaId: Int): Flow<List<PR>> =
+        prDao.obtenerPorCanchaFlow(canchaId).map { entities ->
+            entities.forEach { entity ->
+                android.util.Log.d("TopoRepo", "PR: ${entity.descriptor} lat=${entity.latitud} lng=${entity.longitud} isDirty=${entity.isDirty}")
+            }
+            entities.map { it.toDomain() }
+        }
 
     override suspend fun sincronizarPRsPorCancha(canchaId: Int) {
         try {

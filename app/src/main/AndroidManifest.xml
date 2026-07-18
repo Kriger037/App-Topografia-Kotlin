@@ -20,6 +20,7 @@
         android:theme="@style/Theme.TopografiaApp"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
+        <activity android:name=".presentation.import_coords.ImportActivity"/>
         <activity
             android:name=".LoginActivity"
             android:exported="true">

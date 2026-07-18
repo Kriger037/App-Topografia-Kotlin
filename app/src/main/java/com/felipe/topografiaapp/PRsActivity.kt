@@ -13,6 +13,7 @@ import com.felipe.topografiaapp.databinding.ActivityPrsBinding
 import com.felipe.topografiaapp.domain.model.CoordenadaResult
 import com.felipe.topografiaapp.domain.model.PR
 import com.felipe.topografiaapp.presentation.common.UiState
+import com.felipe.topografiaapp.presentation.import_coords.ImportActivity
 import com.felipe.topografiaapp.presentation.prs.PRsViewModel
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -48,6 +49,14 @@ class PRsActivity : AppCompatActivity() {
         binding.btnVerMapa.setOnClickListener {
             startActivity(Intent(this, MapaActivity::class.java)
                 .putExtra("CANCHA_ID", canchaId))
+        }
+
+        binding.btnImportarArchivo.setOnClickListener {
+            val intent = Intent(this, ImportActivity::class.java)
+            intent.putExtra("CANCHA_ID", canchaId)
+            intent.putExtra("HUSO", 18) // por ahora fijo, después lo tomamos de la cancha
+            intent.putExtra("NUMERO_CANCHA", numeroCancha)
+            startActivity(intent)
         }
     }
 

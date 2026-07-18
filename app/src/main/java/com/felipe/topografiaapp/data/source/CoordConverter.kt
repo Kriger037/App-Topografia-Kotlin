@@ -2,7 +2,6 @@ package com.felipe.topografiaapp.data.source
 
 import com.felipe.topografiaapp.domain.model.CoordenadaResult
 import org.locationtech.proj4j.CRSFactory
-import org.locationtech.proj4j.CoordinateReferenceSystem
 import org.locationtech.proj4j.CoordinateTransform
 import org.locationtech.proj4j.CoordinateTransformFactory
 import org.locationtech.proj4j.ProjCoordinate
@@ -12,16 +11,14 @@ import javax.inject.Singleton
 // ---------------------------------------------------------------------------
 // CoordConverter
 //
-// Wrapper de la librería proj4j para conversión de coordenadas geodésicas.
-// Equivalente nativo de la librería PROJ4PHP usada en procesar_upload.php.
+// Usa cadenas de proyección PROJ4 directas en vez de códigos EPSG.
+// Esto evita la dependencia de los archivos proj4/nad/epsg que no están
+// disponibles en Android, causando IllegalStateException en runtime.
 //
-// Dependencia en build.gradle.kts:
-//   implementation("org.locationtech.proj4j:proj4j:1.3.0")
-//
-// Proyecciones utilizadas:
-//   EPSG:32718 → UTM Zona 18 Sur (Chile centro/norte)
-//   EPSG:32719 → UTM Zona 19 Sur (Chile sur y cordillera)
-//   EPSG:4326  → WGS84 (Latitud/Longitud, el formato de Google Maps)
+// Proyecciones equivalentes:
+//   EPSG:32718 → UTM Zona 18 Sur → cadena proj4 directa
+//   EPSG:32719 → UTM Zona 19 Sur → cadena proj4 directa
+//   EPSG:4326  → WGS84 LatLng    → cadena proj4 directa
 // ---------------------------------------------------------------------------
 
 @Singleton
@@ -30,41 +27,48 @@ class CoordConverter @Inject constructor() {
     private val crsFactory = CRSFactory()
     private val ctFactory = CoordinateTransformFactory()
 
-    // Proyección WGS84 (LatLng), compartida entre todas las transformaciones
-    private val wgs84: CoordinateReferenceSystem by lazy {
-        crsFactory.createFromName("EPSG:4326")
+    // Definiciones PROJ4 directas sin depender de archivos EPSG externos
+    private val wgs84 by lazy {
+        crsFactory.createFromParameters(
+            "WGS84",
+            "+proj=longlat +datum=WGS84 +no_defs"
+        )
     }
 
-    // Cache de las CRS UTM para evitar recrearlas en cada llamada
-    private val crsUtm18: CoordinateReferenceSystem by lazy {
-        crsFactory.createFromName("EPSG:32718")
-    }
-    private val crsUtm19: CoordinateReferenceSystem by lazy {
-        crsFactory.createFromName("EPSG:32719")
+    private val utm18Sur by lazy {
+        crsFactory.createFromParameters(
+            "UTM18S",
+            "+proj=utm +zone=18 +south +datum=WGS84 +units=m +no_defs"
+        )
     }
 
-    // Transformadores cacheados (thread-safe con synchronized)
+    private val utm19Sur by lazy {
+        crsFactory.createFromParameters(
+            "UTM19S",
+            "+proj=utm +zone=19 +south +datum=WGS84 +units=m +no_defs"
+        )
+    }
+
     private val transformUtm18aWgs84: CoordinateTransform by lazy {
-        ctFactory.createTransform(crsUtm18, wgs84)
-    }
-    private val transformUtm19aWgs84: CoordinateTransform by lazy {
-        ctFactory.createTransform(crsUtm19, wgs84)
-    }
-    private val transformWgs84aUtm18: CoordinateTransform by lazy {
-        ctFactory.createTransform(wgs84, crsUtm18)
-    }
-    private val transformWgs84aUtm19: CoordinateTransform by lazy {
-        ctFactory.createTransform(wgs84, crsUtm19)
+        ctFactory.createTransform(utm18Sur, wgs84)
     }
 
-    // -----------------------------------------------------------------------
-    // UTM → LatLng
-    // Equivalente a lo que hace procesar_upload.php con proj4php:
-    //   $puntoUTM = new Point($este, $norte, $projUTM);
-    //   $puntoLatLong = $proj4->transform($projWGS84, $puntoUTM);
-    // -----------------------------------------------------------------------
+    private val transformUtm19aWgs84: CoordinateTransform by lazy {
+        ctFactory.createTransform(utm19Sur, wgs84)
+    }
+
+    private val transformWgs84aUtm18: CoordinateTransform by lazy {
+        ctFactory.createTransform(wgs84, utm18Sur)
+    }
+
+    private val transformWgs84aUtm19: CoordinateTransform by lazy {
+        ctFactory.createTransform(wgs84, utm19Sur)
+    }
+
     fun utmALatLng(norte: Double, este: Double, zona: Int): CoordenadaResult {
         return try {
+            android.util.Log.d("CoordConverter", "Convirtiendo: norte=$norte este=$este zona=$zona")
+
             val puntoBruto = ProjCoordinate(este, norte)
             val puntoResultado = ProjCoordinate()
 
@@ -78,7 +82,8 @@ class CoordConverter @Inject constructor() {
                 transformador.transform(puntoBruto, puntoResultado)
             }
 
-            // proj4j devuelve x=longitud, y=latitud en WGS84
+            android.util.Log.d("CoordConverter", "Resultado: lat=${puntoResultado.y} lng=${puntoResultado.x}")
+
             CoordenadaResult.Exito(
                 latitud = puntoResultado.y,
                 longitud = puntoResultado.x,
@@ -87,18 +92,13 @@ class CoordConverter @Inject constructor() {
                 zona = zona
             )
         } catch (e: Exception) {
+            android.util.Log.e("CoordConverter", "Error en conversión: ${e.message}", e)
             CoordenadaResult.Error("Error en conversión UTM→LatLng: ${e.message}")
         }
     }
 
-    // -----------------------------------------------------------------------
-    // LatLng → UTM
-    // Conversión inversa. Detecta automáticamente la zona según la longitud.
-    // -----------------------------------------------------------------------
     fun latLngAUtm(latitud: Double, longitud: Double): CoordenadaResult {
         return try {
-            // Determinar zona UTM basado en la longitud geográfica
-            // Chile continental: Zona 18S (longitud -69° a -75°) / Zona 19S (más al este)
             val zona = if (longitud < -69.0) 18 else 19
 
             val puntoWgs84 = ProjCoordinate(longitud, latitud)
@@ -114,7 +114,6 @@ class CoordConverter @Inject constructor() {
                 transformador.transform(puntoWgs84, puntoUtm)
             }
 
-            // proj4j devuelve x=Este, y=Norte en UTM
             CoordenadaResult.Exito(
                 latitud = latitud,
                 longitud = longitud,
@@ -127,12 +126,8 @@ class CoordConverter @Inject constructor() {
         }
     }
 
-    // -----------------------------------------------------------------------
-    // Conversión de lista completa (para uso en ImportUseCase)
-    // Procesa múltiples puntos en una sola llamada, eficiente para archivos grandes
-    // -----------------------------------------------------------------------
     fun convertirListaUtmALatLng(
-        puntos: List<Triple<Double, Double, Double>>, // norte, este, cota
+        puntos: List<Triple<Double, Double, Double>>,
         zona: Int
     ): List<CoordenadaResult> {
         return puntos.map { (norte, este, _) ->
