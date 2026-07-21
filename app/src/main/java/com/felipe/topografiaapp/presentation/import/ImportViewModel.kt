@@ -39,11 +39,11 @@ class ImportViewModel @Inject constructor(
     private var resultadoPendiente: ResultadoImportacion? = null
 
     // Procesa un archivo elegido con el picker del sistema
-    fun procesarArchivoDesdeUri(uri: Uri, canchaId: Int) {
+    fun procesarArchivoDesdeUri(uri: Uri, canchaId: Int, huso: Int) {
         viewModelScope.launch {
             try {
                 _importState.value = UiState.Loading
-                val resultado = fileImportUseCase.procesarArchivo(uri, canchaId)
+                val resultado = fileImportUseCase.procesarArchivo(uri, canchaId, huso)
                 resultadoPendiente = resultado
                 _importState.value = UiState.Success(resultado)
             } catch (e: Exception) {
@@ -52,11 +52,11 @@ class ImportViewModel @Inject constructor(
         }
     }
 
-    fun procesarArchivoDesdeNombre(nombre: String, canchaId: Int) {
+    fun procesarArchivoDesdeNombre(nombre: String, canchaId: Int, huso: Int) {
         viewModelScope.launch {
             try {
                 _importState.value = UiState.Loading
-                val resultado = fileImportUseCase.procesarArchivoPredeterminado(nombre, canchaId)
+                val resultado = fileImportUseCase.procesarArchivoPredeterminado(nombre, canchaId, huso)
                 resultadoPendiente = resultado
                 _importState.value = UiState.Success(resultado)
             } catch (e: Exception) {

@@ -28,3 +28,13 @@ data class PRDto(
     val fecha_creacion: String,
     val fecha_modificacion: String
 )
+
+data class ConversionResponse(
+    val exito: Boolean,
+    val latitud: Double?,
+    val longitud: Double?,
+    val norte: Double?,
+    val este: Double?,
+    val zona: Int?,
+    val mensaje: String?
+)

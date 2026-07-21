@@ -11,6 +11,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.felipe.topografiaapp.R
 import com.felipe.topografiaapp.databinding.ActivityImportBinding
 import com.felipe.topografiaapp.domain.model.FormatoArchivoCoord
 import com.felipe.topografiaapp.domain.model.ResultadoImportacion
@@ -26,11 +27,15 @@ class ImportActivity : AppCompatActivity() {
 
     private var canchaId: Int = -1
 
+    // Huso seleccionado por el usuario, 18 por defecto
+    private val husoSeleccionado: Int
+        get() = if (binding.rgHuso.checkedRadioButtonId == R.id.rbHuso19) 19 else 18
+
     private val pickFileLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri ->
         uri?.let {
-            viewModel.procesarArchivoDesdeUri(it, canchaId)
+            viewModel.procesarArchivoDesdeUri(it, canchaId, husoSeleccionado)
         }
     }
 
@@ -57,7 +62,7 @@ class ImportActivity : AppCompatActivity() {
             binding.rvArchivos.visibility = View.VISIBLE
             binding.rvArchivos.layoutManager = LinearLayoutManager(this)
             binding.rvArchivos.adapter = ArchivoAdapter(archivos) { nombreArchivo ->
-                viewModel.procesarArchivoDesdeNombre(nombreArchivo, canchaId)
+                viewModel.procesarArchivoDesdeNombre(nombreArchivo, canchaId, husoSeleccionado)
             }
         }
 

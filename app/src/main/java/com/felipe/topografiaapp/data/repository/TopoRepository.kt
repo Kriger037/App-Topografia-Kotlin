@@ -98,9 +98,9 @@ class TopoRepository @Inject constructor(
 
     override suspend fun guardarPRsLocalmente(prs: List<PR>, canchaId: Int) {
         val entities = prs.map { pr ->
-            // Si el PR importado no tiene coordenadas geográficas, convertir ahora
-            val prConCoords = if (pr.latitud == null && pr.norte > 0 && pr.este > 0) {
-                val huso = canchaDao.obtenerHuso(canchaId) ?: 18
+            val prFinal = if (pr.latitud == null && pr.longitud == null
+                && pr.norte > 0 && pr.este > 0) {
+                val huso = if (pr.este >= 700_000.0) 19 else 18
                 val conversion = coordConverter.utmALatLng(pr.norte, pr.este, huso)
                 if (conversion is CoordenadaResult.Exito) {
                     pr.copy(
@@ -109,9 +109,10 @@ class TopoRepository @Inject constructor(
                         isDirty = true
                     )
                 } else pr.copy(isDirty = true)
-            } else pr.copy(isDirty = true)
-
-            prConCoords.toEntity()
+            } else {
+                pr.copy(isDirty = true)
+            }
+            prFinal.toEntity()
         }
         prDao.insertarPRs(entities)
     }

@@ -31,12 +31,12 @@ class FileImportUseCase @Inject constructor(
             return carpeta
         }
 
-    fun procesarArchivo(uri: Uri, canchaId: Int, huso: Int? = null): ResultadoImportacion {
+    suspend fun procesarArchivo(uri: Uri, canchaId: Int, huso: Int? = null): ResultadoImportacion {
         val lineas = leerLineas(uri)
         return parsearLineas(lineas, canchaId, huso)
     }
 
-    fun procesarArchivoPredeterminado(nombreArchivo: String, canchaId: Int, huso: Int? = null): ResultadoImportacion {
+    suspend fun procesarArchivoPredeterminado(nombreArchivo: String, canchaId: Int, huso: Int? = null): ResultadoImportacion {
         val archivo = File(carpetaPredeterminada, nombreArchivo)
         val lineas = archivo.readLines()
         return parsearLineas(lineas, canchaId, huso)
@@ -49,7 +49,7 @@ class FileImportUseCase @Inject constructor(
             ?: emptyList()
     }
 
-    private fun parsearLineas(lineas: List<String>, canchaId: Int, husoForzado: Int? = null): ResultadoImportacion {
+    private suspend fun parsearLineas(lineas: List<String>, canchaId: Int, husoForzado: Int? = null): ResultadoImportacion {
         val puntosValidos = mutableListOf<PR>()
         var lineasIgnoradas = 0
         val fechaActual = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
@@ -96,9 +96,7 @@ class FileImportUseCase @Inject constructor(
             }
 
             if (descriptor.isNotEmpty() && norte > 0 && este > 0) {
-                // Detectar zona automáticamente si no se forzó una
-                val husoAUsar = husoForzado ?: if (este >= 700_000.0) 19 else 18
-                val conversion = coordConverter.utmALatLng(norte, este, husoAUsar)
+                val conversion = coordConverter.utmALatLng(norte, este, husoForzado ?: 18)
 
                 val latitud = if (conversion is CoordenadaResult.Exito) conversion.latitud else null
                 val longitud = if (conversion is CoordenadaResult.Exito) conversion.longitud else null
@@ -123,11 +121,10 @@ class FileImportUseCase @Inject constructor(
             }
         }
 
-        val zonaDetectada = husoForzado ?: if (puntosValidos.isNotEmpty() && puntosValidos.first().este >= 700_000.0) 19 else 18
+        val zonaDetectada = husoForzado ?: 18
 
-        val formatoDetectado = when {
-            puntosValidos.isEmpty() -> FormatoArchivoCoord.DESCONOCIDO
-            puntosValidos.first().este >= 700_000.0 -> FormatoArchivoCoord.UTM_ZONA_19
+        val formatoDetectado = when (zonaDetectada) {
+            19 -> FormatoArchivoCoord.UTM_ZONA_19
             else -> FormatoArchivoCoord.UTM_ZONA_18
         }
 

@@ -4,6 +4,7 @@ import com.felipe.topografiaapp.data.remote.dto.CanchaDto
 import com.felipe.topografiaapp.data.remote.dto.FundoDto
 import com.felipe.topografiaapp.data.remote.dto.PRDto
 import com.felipe.topografiaapp.LoginResponse
+import com.felipe.topografiaapp.data.remote.dto.ConversionResponse
 import retrofit2.Call
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
@@ -28,4 +29,11 @@ interface ApiService {
         @Field("usuario") usuario: String,
         @Field("contrasena") contrasena: String
     ): Call<LoginResponse>
+
+    @GET("topografia/convertir_coordenadas.php")
+    suspend fun convertirCoordenadas(
+        @Query("norte") norte: Double,
+        @Query("este") este: Double,
+        @Query("zona") zona: Int
+    ): ConversionResponse
 }

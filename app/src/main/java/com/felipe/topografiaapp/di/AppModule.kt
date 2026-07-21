@@ -55,15 +55,6 @@ object NetworkModule {
 
 @Module
 @InstallIn(SingletonComponent::class)
-object GeoModule {
-
-    @Provides
-    @Singleton
-    fun provideCoordConverter(): CoordConverter = CoordConverter()
-}
-
-@Module
-@InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
 
     @Binds

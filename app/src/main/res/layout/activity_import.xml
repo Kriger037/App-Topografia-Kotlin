@@ -45,6 +45,48 @@
                 android:padding="12dp"
                 android:layout_marginBottom="16dp"/>
 
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Zona UTM del archivo"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#333333"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="4dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp">
+
+                <RadioGroup
+                    android:id="@+id/rgHuso"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/rbHuso18"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Zona 18 Sur"
+                        android:textSize="14sp"
+                        android:checked="true"/>
+
+                    <RadioButton
+                        android:id="@+id/rbHuso19"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Zona 19 Sur"
+                        android:textSize="14sp"/>
+
+                </RadioGroup>
+            </LinearLayout>
+
             <!-- Archivos disponibles en carpeta predeterminada -->
             <TextView
                 android:layout_width="match_parent"
