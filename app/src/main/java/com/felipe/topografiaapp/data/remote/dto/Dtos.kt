@@ -38,3 +38,25 @@ data class ConversionResponse(
     val zona: Int?,
     val mensaje: String?
 )
+
+data class PRSyncDto(
+    val canchaId: Int,
+    val descriptor: String,
+    val norte: Double,
+    val este: Double,
+    val cota: Double,
+    val latitud: Double?,
+    val longitud: Double?
+)
+
+data class ActualizarPRsRequest(
+    val prs: List<PRSyncDto>
+)
+
+data class ActualizarPRsResponse(
+    val exito: Boolean,
+    val actualizados: Int,
+    val insertados: Int,
+    val errores: Int,
+    val mensaje: String?
+)

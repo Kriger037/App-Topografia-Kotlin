@@ -72,18 +72,36 @@ class TopoRepository @Inject constructor(
             android.util.Log.d("TopoRepo", "Intentando sincronizar PRs para canchaId=$canchaId")
             val dtos = apiService.obtenerPRs(canchaId)
             android.util.Log.d("TopoRepo", "PRs recibidos del servidor: ${dtos.size}")
+
             val huso = canchaDao.obtenerHuso(canchaId) ?: 18
-            val entities = dtos.map { dto ->
+
+            // Obtener los PRs locales que están pendientes de sincronizar
+            // Estos NO se sobreescriben porque son más recientes que el servidor
+            val descriptoresDirty = prDao.obtenerPendientesSincronizacion()
+                .filter { it.canchaId == canchaId }
+                .map { it.descriptor }
+                .toSet()
+
+            android.util.Log.d("TopoRepo", "PRs locales protegidos (isDirty): ${descriptoresDirty.size}")
+
+            val entities = dtos.mapNotNull { dto ->
+                // Si el PR local tiene isDirty=true, no sobreescribir con el del servidor
+                if (dto.descriptor in descriptoresDirty) {
+                    android.util.Log.d("TopoRepo", "Protegiendo PR local: ${dto.descriptor}")
+                    return@mapNotNull null
+                }
+
                 val entity = dto.toEntity(canchaId)
                 if (entity.latitud == null && entity.longitud == null
                     && entity.norte > 0 && entity.este > 0
                 ) {
                     val conversion = coordConverter.utmALatLng(entity.norte, entity.este, huso)
-                    if (conversion is com.felipe.topografiaapp.domain.model.CoordenadaResult.Exito) {
+                    if (conversion is CoordenadaResult.Exito) {
                         entity.copy(latitud = conversion.latitud, longitud = conversion.longitud)
                     } else entity
                 } else entity
             }
+
             prDao.insertarPRs(entities)
             android.util.Log.d("TopoRepo", "PRs guardados en Room: ${entities.size}")
         } catch (e: Exception) {
