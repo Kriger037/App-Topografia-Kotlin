@@ -5,38 +5,60 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.felipe.topografiaapp.domain.model.Fundo
 
-// El Adaptador recibe como parametro la lista de fundos descargados de MySQL
-class FundoAdapter(private val listaFundos: List<Fundo>) : RecyclerView.Adapter<FundoAdapter.FundoViewHolder>() {
+class FundoAdapter(
+    private var listaCompleta: List<Fundo>,
+    private val esAdmin: Boolean = false,
+    private val onEliminarClick: ((Fundo) -> Unit)? = null
+) : RecyclerView.Adapter<FundoAdapter.FundoViewHolder>() {
+
+    private var listaFiltrada: List<Fundo> = listaCompleta.toList()
+
     class FundoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val tvNombreFundo: TextView = itemView.findViewById(R.id.tvNombreFundo)
         val tvCodigoFundo: TextView = itemView.findViewById(R.id.tvCodigoFundo)
         val tvComuna: TextView = itemView.findViewById(R.id.tvComuna)
+        val btnEliminar: View = itemView.findViewById(R.id.btnEliminarFundo)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FundoViewHolder {
-        val itemView = LayoutInflater.from(parent.context).inflate(R.layout.item_fundo, parent, false)
-        return FundoViewHolder(itemView)
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_fundo, parent, false)
+        return FundoViewHolder(view)
     }
 
-    override fun onBindViewHolder(holder: FundoViewHolder, position: Int){
-        val fundoActual = listaFundos[position]
+    override fun getItemCount() = listaFiltrada.size
 
-        holder.tvNombreFundo.text = fundoActual.nombre_fundo
-        holder.tvCodigoFundo.text = "Código: ${fundoActual.codigo_fundo}"
-        holder.tvComuna.text = "Comuna: ${fundoActual.comuna}"
+    override fun onBindViewHolder(holder: FundoViewHolder, position: Int) {
+        val fundo = listaFiltrada[position]
+        holder.tvNombreFundo.text = fundo.nombreFundo
+        holder.tvCodigoFundo.text = "Código: ${fundo.codigoFundo}"
+        holder.tvComuna.text = "Comuna: ${fundo.comuna ?: "Sin información"}"
 
-        holder.itemView.setOnClickListener { view ->
-            val intent = android.content.Intent(view.context, CanchasActivity::class.java)
+        // Mostrar botón eliminar solo para Admin
+        holder.btnEliminar.visibility = if (esAdmin) View.VISIBLE else View.GONE
+        holder.btnEliminar.setOnClickListener {
+            onEliminarClick?.invoke(fundo)
+        }
 
-            intent.putExtra("CODIGO_FUNDO", fundoActual.codigo_fundo)
-            intent.putExtra("NOMBRE_FUNDO", fundoActual.nombre_fundo)
-
-            view.context.startActivity(intent)
+        holder.itemView.setOnClickListener {
+            val intent = android.content.Intent(it.context, CanchasActivity::class.java)
+            intent.putExtra("CODIGO_FUNDO", fundo.codigoFundo)
+            intent.putExtra("NOMBRE_FUNDO", fundo.nombreFundo)
+            it.context.startActivity(intent)
         }
     }
 
-    override fun getItemCount(): Int{
-        return listaFundos.size
+    // Filtrar por nombre o código
+    fun filtrar(texto: String) {
+        listaFiltrada = if (texto.isEmpty()) {
+            listaCompleta.toList()
+        } else {
+            listaCompleta.filter {
+                it.nombreFundo.contains(texto, ignoreCase = true) ||
+                        it.codigoFundo.contains(texto, ignoreCase = true)
+            }
+        }
+        notifyDataSetChanged()
     }
 }

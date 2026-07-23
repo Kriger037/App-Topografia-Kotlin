@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F5F5F5">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbarImport"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        app:titleTextColor="#FFFFFF"/>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Sección carpeta predeterminada -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Carpeta predeterminada"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#333333"
+                android:layout_marginBottom="4dp"/>
+
+            <TextView
+                android:id="@+id/tvRutaCarpeta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Cargando ruta..."
+                android:textSize="12sp"
+                android:textColor="#666666"
+                android:background="#FFFFFF"
+                android:padding="12dp"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Zona UTM del archivo"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#333333"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="4dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp">
+
+                <RadioGroup
+                    android:id="@+id/rgHuso"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/rbHuso18"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Zona 18 Sur"
+                        android:textSize="14sp"
+                        android:checked="true"/>
+
+                    <RadioButton
+                        android:id="@+id/rbHuso19"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Zona 19 Sur"
+                        android:textSize="14sp"/>
+
+                </RadioGroup>
+            </LinearLayout>
+
+            <!-- Archivos disponibles en carpeta predeterminada -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Archivos disponibles en la carpeta"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#333333"
+                android:layout_marginBottom="4dp"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvArchivos"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#FFFFFF"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:id="@+id/tvSinArchivos"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="No hay archivos .txt o .csv en la carpeta"
+                android:textSize="13sp"
+                android:textColor="#999999"
+                android:gravity="center"
+                android:padding="16dp"
+                android:visibility="gone"/>
+
+            <!-- Botón para elegir archivo desde cualquier ubicación -->
+            <Button
+                android:id="@+id/btnElegirArchivo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Elegir archivo desde el dispositivo"
+                android:backgroundTint="#1976D2"
+                android:textColor="#FFFFFF"
+                android:padding="12dp"
+                android:layout_marginBottom="24dp"
+                app:cornerRadius="8dp"/>
+
+            <!-- Vista previa del resultado del parsing -->
+            <LinearLayout
+                android:id="@+id/layoutVistaPrevia"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="#FFFFFF"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Vista previa"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#333333"
+                    android:layout_marginBottom="12dp"/>
+
+                <TextView
+                    android:id="@+id/tvFormatoDetectado"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="13sp"
+                    android:textColor="#333333"
+                    android:layout_marginBottom="4dp"/>
+
+                <TextView
+                    android:id="@+id/tvPuntosDetectados"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="13sp"
+                    android:textColor="#333333"
+                    android:layout_marginBottom="4dp"/>
+
+                <TextView
+                    android:id="@+id/tvLineasIgnoradas"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="13sp"
+                    android:textColor="#888888"
+                    android:layout_marginBottom="12dp"/>
+
+                <!-- Primeros 5 puntos detectados como referencia -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Primeros puntos detectados:"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="#333333"
+                    android:layout_marginBottom="4dp"/>
+
+                <TextView
+                    android:id="@+id/tvMuestraPuntos"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="12sp"
+                    android:textColor="#444444"
+                    android:fontFamily="monospace"
+                    android:layout_marginBottom="16dp"/>
+
+                <Button
+                    android:id="@+id/btnConfirmarImportacion"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Confirmar e importar puntos"
+                    android:backgroundTint="#4CAF50"
+                    android:textColor="#FFFFFF"
+                    android:padding="12dp"
+                    app:cornerRadius="8dp"/>
+            </LinearLayout>
+
+            <ProgressBar
+                android:id="@+id/progressBarImport"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="center"
+                android:visibility="gone"/>
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

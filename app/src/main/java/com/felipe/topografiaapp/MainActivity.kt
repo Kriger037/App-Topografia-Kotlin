@@ -2,88 +2,149 @@ package com.felipe.topografiaapp
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
-import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import androidx.appcompat.widget.SearchView
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
+import com.felipe.topografiaapp.databinding.ActivityMainBinding
+import com.felipe.topografiaapp.domain.model.Fundo
+import com.felipe.topografiaapp.presentation.common.UiState
+import com.felipe.topografiaapp.presentation.fundos.FundosViewModel
+import com.felipe.topografiaapp.worker.SyncWorker
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.Snackbar
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 
-class MainActivity : AppCompatActivity(){
+@AndroidEntryPoint
+class MainActivity : AppCompatActivity() {
 
-    private lateinit var localDataManager: LocalDataManager
+    private lateinit var binding: ActivityMainBinding
+    private val viewModel: FundosViewModel by viewModels()
+    private var esAdmin = false
+    private var adapter: FundoAdapter? = null
 
-    override fun onCreate(savedInstanceState: Bundle?){
+    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        localDataManager = LocalDataManager(this)
+        setSupportActionBar(binding.toolbarMain)
 
-        val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbarMain)
-        setSupportActionBar(toolbar)
-
-        val tvUsuario = findViewById<TextView>(R.id.tvUsuarioLogueado)
         val sharedPref = getSharedPreferences("SesionTopografia", MODE_PRIVATE)
         val nombreGuardado = sharedPref.getString("nombre_usuario", "Desconocido")
+        esAdmin = sharedPref.getString("rol", "User") == "Admin"
 
-        tvUsuario.text = "Usuario: $nombreGuardado"
+        binding.tvUsuarioLogueado.text = "Usuario: $nombreGuardado"
 
-        val rvFundos = findViewById<RecyclerView>(R.id.rvFundos)
-        rvFundos.layoutManager = LinearLayoutManager(this)
+        binding.rvFundos.layoutManager = LinearLayoutManager(this)
 
-        RetrofitClient.api.obtenerUsuarios()
-            .enqueue(object : Callback<List<Usuario>>{
-                override fun onResponse(call: Call<List<Usuario>>, response: Response<List<Usuario>>){
-                    if (response.isSuccessful){
-                        val usuarios = response.body()
-                        Log.d("API_TEST", "Conexión exitosa Usuarios encontrados: ${usuarios?.size}")
-                    }else{
-                        Log.e("API_TEST", "Error en la respuesta: ${response.code()}")
-                    }
-                }
-
-                override fun onFailure(call: Call<List<Usuario>>, t: Throwable){
-                    Log.e("API_TEST", "Falló la conexión: ${t.message}")
-                }
-            })
-
-        val llamada2 = RetrofitClient.api.obtenerFundos()
-
-        llamada2.enqueue(object : Callback<List<Fundo>>{
-            override fun onResponse(call: Call<List<Fundo>>, response: Response<List<Fundo>>){
-                if (response.isSuccessful){
-                    val fundos = response.body() ?: emptyList()
-                    Log.d("API_FUNDOS", "Conexión exitosa Fundos encontrados: ${fundos.size}")
-
-                    lifecycleScope.launch {
-                        localDataManager.guardarFundos(fundos)
-                    }
-
-                    val adaptador = FundoAdapter(fundos)
-                    rvFundos.adapter = adaptador
-                } else {
-                    Log.e("API_FUNDOS", "Error en la respuesta: ${response.code()}")
-                }
-            }
-
-            override fun onFailure(call: Call<List<Fundo>>, t: Throwable){
-                Log.e("API_FUNDOS", "Falló de red: ${t.message}")
-
-                lifecycleScope.launch {
-                    val fundosOffline = localDataManager.leerFundos()
-                    if (fundosOffline.isNotEmpty()) {
-                        Toast.makeText(this@MainActivity, "Modo Offline: Cargando fundos guardados", Toast.LENGTH_LONG).show()
-                        val adaptador = FundoAdapter(fundosOffline)
-                        rvFundos.adapter = adaptador
-                    }
-                }
+        // Barra de búsqueda
+        binding.searchViewFundos.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?) = false
+            override fun onQueryTextChange(newText: String?): Boolean {
+                adapter?.filtrar(newText ?: "")
+                return true
             }
         })
+
+        observarEstados()
+        viewModel.cargarFundos()
+    }
+
+    private fun observarEstados() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.fundosState.collect { estado ->
+                    when (estado) {
+                        is UiState.Loading -> {}
+                        is UiState.Success -> {
+                            adapter = FundoAdapter(
+                                listaCompleta = estado.data,
+                                esAdmin = esAdmin,
+                                onEliminarClick = { fundo -> confirmarEliminacionFundo(fundo) }
+                            )
+                            binding.rvFundos.adapter = adapter
+                        }
+                        is UiState.Error -> {
+                            Snackbar.make(binding.root, estado.mensaje, Snackbar.LENGTH_LONG).show()
+                        }
+                    }
+                }
+            }
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.estaOffline.collect { offline ->
+                    if (offline) {
+                        Toast.makeText(this@MainActivity, "Sin señal. Mostrando fundos guardados.", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun confirmarEliminacionFundo(fundo: Fundo) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Eliminar fundo")
+            .setMessage(
+                "¿Estás seguro de eliminar el fundo ${fundo.nombreFundo} (${fundo.codigoFundo})?\n\n" +
+                        "Esto eliminará también todas sus canchas y PRs asociados.\n\n" +
+                        "El cambio se sincronizará con el servidor al presionar Sincronizar datos."
+            )
+            .setPositiveButton("Eliminar") { _, _ ->
+                lifecycleScope.launch {
+                    viewModel.eliminarFundo(fundo.codigoFundo)
+                    Snackbar.make(
+                        binding.root,
+                        "Fundo ${fundo.nombreFundo} eliminado localmente. Sincroniza para actualizar el servidor.",
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun sincronizarDatos() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>()
+            .setConstraints(constraints)
+            .build()
+
+        val workManager = WorkManager.getInstance(this)
+
+        workManager.enqueueUniqueWork(
+            "sync_prs_manual",
+            ExistingWorkPolicy.REPLACE,
+            syncRequest
+        )
+
+        workManager.getWorkInfoByIdLiveData(syncRequest.id)
+            .observe(this) { workInfo ->
+                when (workInfo?.state) {
+                    WorkInfo.State.ENQUEUED -> Toast.makeText(this, "Sincronización en cola...", Toast.LENGTH_SHORT).show()
+                    WorkInfo.State.RUNNING  -> Toast.makeText(this, "Sincronizando datos...", Toast.LENGTH_SHORT).show()
+                    WorkInfo.State.SUCCEEDED -> Toast.makeText(this, "Datos sincronizados correctamente", Toast.LENGTH_LONG).show()
+                    WorkInfo.State.FAILED   -> Toast.makeText(this, "Error al sincronizar. Intenta de nuevo.", Toast.LENGTH_LONG).show()
+                    WorkInfo.State.BLOCKED  -> Toast.makeText(this, "Sin conexión. Conecta a internet e intenta de nuevo.", Toast.LENGTH_LONG).show()
+                    else -> {}
+                }
+            }
     }
 
     override fun onCreateOptionsMenu(menu: android.view.Menu?): Boolean {
@@ -91,16 +152,16 @@ class MainActivity : AppCompatActivity(){
         return true
     }
 
-    override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean{
-        if(item.itemId == R.id.action_logout){
-            val sharedPref = getSharedPreferences("SesionTopografia", MODE_PRIVATE)
-            sharedPref.edit().clear().apply()
-
-            val intent = Intent(this, LoginActivity::class.java)
-            startActivity(intent)
-            finish()
-            return true
+    override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_sync -> { sincronizarDatos(); true }
+            R.id.action_logout -> {
+                getSharedPreferences("SesionTopografia", MODE_PRIVATE).edit().clear().apply()
+                startActivity(Intent(this, LoginActivity::class.java))
+                finish()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
         }
-        return super.onOptionsItemSelected(item)
     }
 }

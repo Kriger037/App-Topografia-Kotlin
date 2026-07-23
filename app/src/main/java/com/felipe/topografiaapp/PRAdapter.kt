@@ -1,5 +1,6 @@
 package com.felipe.topografiaapp
 
+import com.felipe.topografiaapp.domain.model.PR
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -35,7 +36,7 @@ class PRAdapter(private val listaPRs: List<PR>): RecyclerView.Adapter<PRAdapter.
         holder.tvEste.text = String.format("%.3f", prActual.este)
         holder.tvCota.text = String.format("%.3f", prActual.cota)
 
-        val soloFecha = prActual.fecha_modificacion.substringBefore(" ")
+        val soloFecha = prActual.fechaModificacion.substringBefore(" ")
         holder.tvFechaModPR.text = "Última mod: $soloFecha"
     }
 }

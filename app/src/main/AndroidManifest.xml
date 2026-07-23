@@ -9,6 +9,7 @@
 
 
     <application
+        android:name=".TopografiaApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -19,6 +20,7 @@
         android:theme="@style/Theme.TopografiaApp"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
+        <activity android:name=".presentation.import_coords.ImportActivity"/>
         <activity
             android:name=".LoginActivity"
             android:exported="true">
@@ -42,6 +44,17 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="${MAPS_API_KEY}" />
+
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove"/>
+        </provider>
     </application>
 
 </manifest>
