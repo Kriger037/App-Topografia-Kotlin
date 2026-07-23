@@ -10,12 +10,14 @@ import com.felipe.topografiaapp.data.local.dao.CanchaDao
 import com.felipe.topografiaapp.data.local.dao.FundoDao
 import com.felipe.topografiaapp.data.local.dao.PRDao
 import com.felipe.topografiaapp.data.local.entity.CanchaEntity
+import com.felipe.topografiaapp.data.local.entity.EliminacionPendienteEntity
+import com.felipe.topografiaapp.data.local.dao.EliminacionPendienteDao
 import com.felipe.topografiaapp.data.local.entity.FundoEntity
 import com.felipe.topografiaapp.data.local.entity.PREntity
 
 @Database(
-    entities = [FundoEntity::class, CanchaEntity::class, PREntity::class],
-    version = 4,
+    entities = [FundoEntity::class, CanchaEntity::class, PREntity::class, EliminacionPendienteEntity::class],
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -23,6 +25,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun fundoDao(): FundoDao
     abstract fun canchaDao(): CanchaDao
     abstract fun prDao(): PRDao
+    abstract fun eliminacionPendienteDao(): EliminacionPendienteDao
 
     companion object {
 
@@ -98,6 +101,19 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("""
+            CREATE TABLE tabla_eliminaciones_pendientes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL DEFAULT 0,
+                tipo TEXT NOT NULL,
+                referenciaId TEXT NOT NULL,
+                fechaEliminacion TEXT NOT NULL
+            )
+        """.trimIndent())
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -105,7 +121,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "topografia_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                     .build()
                 INSTANCE = instance
                 instance

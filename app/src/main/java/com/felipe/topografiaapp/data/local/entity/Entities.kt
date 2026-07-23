@@ -20,7 +20,7 @@ data class CanchaEntity(
     val codigoFundo: String,
     val nombreFundo: String?,
     val numeroCancha: String,
-    val huso: Int = 18,                                // Zona UTM: 18 o 19
+    val huso: String = "18",                                // Zona UTM: 18 o 19
     val fechaCreacion: String,
     val fechaActualizacion: String,
     val lastSyncAt: Long = System.currentTimeMillis()
@@ -30,6 +30,7 @@ data class CanchaEntity(
     tableName = "tabla_prs",
     indices = [Index(value = ["canchaId", "descriptor"], unique = true)]
 )
+
 data class PREntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val canchaId: Int,
@@ -43,4 +44,13 @@ data class PREntity(
     val fechaModificacion: String,
     val isDirty: Boolean = false,
     val lastSyncAt: Long = System.currentTimeMillis()
+)
+
+// Tabla para registrar eliminaciones pendientes de sincronizar con el servidor
+@Entity(tableName = "tabla_eliminaciones_pendientes")
+data class EliminacionPendienteEntity(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val tipo: String,           // "FUNDO", "CANCHA" o "PR"
+    val referenciaId: String,   // codigo_fundo para FUNDO, id como string para CANCHA y PR
+    val fechaEliminacion: String
 )

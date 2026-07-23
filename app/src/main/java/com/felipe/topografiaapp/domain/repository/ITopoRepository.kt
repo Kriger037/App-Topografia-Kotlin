@@ -24,4 +24,12 @@ interface ITopoRepository {
     suspend fun guardarPRsLocalmente(prs: List<PR>, canchaId: Int)
     suspend fun obtenerPRsPendientesSincronizacion(): List<PR>
     suspend fun marcarPRsComoSincronizados(canchaId: Int)
+
+    // Eliminación local (marcado pendiente para sincronizar)
+    suspend fun eliminarFundoLocalmente(codigoFundo: String)
+    suspend fun eliminarCanchaLocalmente(canchaId: Int)
+    suspend fun eliminarPRLocalmente(prId: Int)
+
+    // Eliminación en servidor
+    suspend fun sincronizarEliminaciones()
 }

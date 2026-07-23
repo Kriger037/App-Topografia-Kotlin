@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.felipe.topografiaapp.data.local.entity.CanchaEntity
+import com.felipe.topografiaapp.data.local.entity.EliminacionPendienteEntity
 import com.felipe.topografiaapp.data.local.entity.FundoEntity
 import com.felipe.topografiaapp.data.local.entity.PREntity
 import kotlinx.coroutines.flow.Flow
@@ -24,6 +25,9 @@ interface FundoDao {
 
     @Query("SELECT * FROM tabla_fundos")
     suspend fun obtenerTodos(): List<FundoEntity>
+
+    @Query("DELETE FROM tabla_fundos WHERE codigoFundo = :codigoFundo")
+    suspend fun eliminarPorCodigo(codigoFundo: String)
 }
 
 @Dao
@@ -38,8 +42,11 @@ interface CanchaDao {
     suspend fun obtenerPorFundo(codigoFundo: String): List<CanchaEntity>
 
     // Recupera el huso de una cancha específica (necesario para conversión UTM)
-    @Query("SELECT huso FROM tabla_canchas WHERE id = :canchaId LIMIT 1")
-    suspend fun obtenerHuso(canchaId: Int): Int?
+    @Query("SELECT * FROM tabla_canchas WHERE id = :canchaId LIMIT 1")
+    suspend fun obtenerPorId(canchaId: Int): CanchaEntity?
+
+    @Query("DELETE FROM tabla_canchas WHERE id = :canchaId")
+    suspend fun eliminarPorId(canchaId: Int)
 }
 
 @Dao
@@ -64,4 +71,22 @@ interface PRDao {
     // Insertar PRs importados localmente (marcados como dirty para sync posterior)
     @Query("UPDATE tabla_prs SET latitud = :lat, longitud = :lng WHERE id = :prId")
     suspend fun actualizarCoordenadas(prId: Int, lat: Double, lng: Double)
+
+    @Query("DELETE FROM tabla_prs WHERE id = :prId")
+    suspend fun eliminarPorId(prId: Int)
+}
+
+@Dao
+interface EliminacionPendienteDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertar(eliminacion: EliminacionPendienteEntity)
+
+    @Query("SELECT * FROM tabla_eliminaciones_pendientes")
+    suspend fun obtenerTodas(): List<EliminacionPendienteEntity>
+
+    @Query("DELETE FROM tabla_eliminaciones_pendientes WHERE id = :id")
+    suspend fun eliminar(id: Int)
+
+    @Query("DELETE FROM tabla_eliminaciones_pendientes")
+    suspend fun limpiarTodas()
 }

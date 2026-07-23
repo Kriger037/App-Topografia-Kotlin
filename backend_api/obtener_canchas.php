@@ -1,5 +1,5 @@
 <?php
-header('Content-Type: application/json'); // Importante: Le dice al cliente que esto es JSON
+header('Content-Type: application/json');
 require 'conexion.php';
 
 if (!isset($_GET['codigo_fundo'])) {
@@ -14,7 +14,8 @@ try {
                 c.id, 
                 c.codigo_fundo, 
                 f.nombre_fundo, 
-                c.numero_cancha, 
+                c.numero_cancha,
+                c.huso,
                 c.fecha_creacion, 
                 c.fecha_actualizacion 
             FROM canchas c

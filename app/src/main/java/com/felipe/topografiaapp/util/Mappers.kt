@@ -44,7 +44,7 @@ fun FundoDto.toDomain(): Fundo = Fundo(
 )
 
 // ---- CanchaDto → CanchaEntity ----
-fun CanchaDto.toEntity(huso: Int = 18): CanchaEntity = CanchaEntity(
+fun CanchaDto.toEntity(huso: String = "18"): CanchaEntity = CanchaEntity(
     id = id,
     codigoFundo = codigo_fundo,
     nombreFundo = nombre_fundo,
@@ -61,7 +61,7 @@ fun CanchaEntity.toDomain(): Cancha = Cancha(
     codigoFundo = codigoFundo,
     nombreFundo = nombreFundo,
     numeroCancha = numeroCancha,
-    huso = huso,
+    huso = huso.toIntOrNull() ?: 18,
     fechaCreacion = fechaCreacion,
     fechaActualizacion = fechaActualizacion
 )

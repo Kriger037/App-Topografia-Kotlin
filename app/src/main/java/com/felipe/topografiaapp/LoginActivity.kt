@@ -46,10 +46,13 @@ class LoginActivity : AppCompatActivity() {
                         if (response.isSuccessful && response.body() != null) {
                             val loginResponse = response.body()!!
                             if (loginResponse.exito) {
-                                val nombreReal = loginResponse.nombre_usuario
+                                val nombreReal = loginResponse.nombre_usuario ?: ""
+                                val rol = loginResponse.rol ?: "User"
+
                                 val editor = sharedPref.edit()
                                 editor.putBoolean("isLoggedIn", true)
                                 editor.putString("nombre_usuario", nombreReal)
+                                editor.putString("rol", rol)
                                 editor.apply()
 
                                 Toast.makeText(this@LoginActivity, "Bienvenido, $nombreReal", Toast.LENGTH_SHORT).show()

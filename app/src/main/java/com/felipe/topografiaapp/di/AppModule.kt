@@ -1,14 +1,14 @@
 package com.felipe.topografiaapp.di
 
 import android.content.Context
-import com.felipe.topografiaapp.data.local.AppDatabase
 import com.felipe.topografiaapp.RetrofitClient
+import com.felipe.topografiaapp.data.local.AppDatabase
 import com.felipe.topografiaapp.data.local.dao.CanchaDao
+import com.felipe.topografiaapp.data.local.dao.EliminacionPendienteDao
 import com.felipe.topografiaapp.data.local.dao.FundoDao
 import com.felipe.topografiaapp.data.local.dao.PRDao
 import com.felipe.topografiaapp.data.remote.ApiService
 import com.felipe.topografiaapp.data.repository.TopoRepository
-import com.felipe.topografiaapp.data.source.CoordConverter
 import com.felipe.topografiaapp.domain.repository.ITopoRepository
 import dagger.Binds
 import dagger.Module
@@ -37,6 +37,10 @@ object DatabaseModule {
 
     @Provides
     fun providePRDao(db: AppDatabase): PRDao = db.prDao()
+
+    @Provides
+    fun provideEliminacionPendienteDao(db: AppDatabase): EliminacionPendienteDao =
+        db.eliminacionPendienteDao()
 }
 
 @Module

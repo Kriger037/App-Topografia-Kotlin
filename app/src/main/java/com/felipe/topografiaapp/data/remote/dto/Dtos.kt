@@ -12,6 +12,7 @@ data class CanchaDto(
     val codigo_fundo: String,
     val nombre_fundo: String?,
     val numero_cancha: String,
+    val huso: String = "18",
     val fecha_creacion: String,
     val fecha_actualizacion: String
 )
@@ -58,5 +59,14 @@ data class ActualizarPRsResponse(
     val actualizados: Int,
     val insertados: Int,
     val errores: Int,
+    val mensaje: String?
+)
+
+data class EliminarFundoRequest(val codigo_fundo: String)
+data class EliminarCanchaRequest(val cancha_id: Int)
+data class EliminarPRRequest(val pr_id: Int)
+
+data class EliminarResponse(
+    val exito: Boolean,
     val mensaje: String?
 )

@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SearchView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -20,6 +21,7 @@ import com.felipe.topografiaapp.domain.model.Fundo
 import com.felipe.topografiaapp.presentation.common.UiState
 import com.felipe.topografiaapp.presentation.fundos.FundosViewModel
 import com.felipe.topografiaapp.worker.SyncWorker
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -29,6 +31,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private val viewModel: FundosViewModel by viewModels()
+    private var esAdmin = false
+    private var adapter: FundoAdapter? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,9 +43,20 @@ class MainActivity : AppCompatActivity() {
 
         val sharedPref = getSharedPreferences("SesionTopografia", MODE_PRIVATE)
         val nombreGuardado = sharedPref.getString("nombre_usuario", "Desconocido")
+        esAdmin = sharedPref.getString("rol", "User") == "Admin"
+
         binding.tvUsuarioLogueado.text = "Usuario: $nombreGuardado"
 
         binding.rvFundos.layoutManager = LinearLayoutManager(this)
+
+        // Barra de búsqueda
+        binding.searchViewFundos.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?) = false
+            override fun onQueryTextChange(newText: String?): Boolean {
+                adapter?.filtrar(newText ?: "")
+                return true
+            }
+        })
 
         observarEstados()
         viewModel.cargarFundos()
@@ -54,7 +69,12 @@ class MainActivity : AppCompatActivity() {
                     when (estado) {
                         is UiState.Loading -> {}
                         is UiState.Success -> {
-                            binding.rvFundos.adapter = FundoAdapter(estado.data)
+                            adapter = FundoAdapter(
+                                listaCompleta = estado.data,
+                                esAdmin = esAdmin,
+                                onEliminarClick = { fundo -> confirmarEliminacionFundo(fundo) }
+                            )
+                            binding.rvFundos.adapter = adapter
                         }
                         is UiState.Error -> {
                             Snackbar.make(binding.root, estado.mensaje, Snackbar.LENGTH_LONG).show()
@@ -68,15 +88,33 @@ class MainActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.estaOffline.collect { offline ->
                     if (offline) {
-                        Toast.makeText(
-                            this@MainActivity,
-                            "Sin señal. Mostrando fundos guardados.",
-                            Toast.LENGTH_LONG
-                        ).show()
+                        Toast.makeText(this@MainActivity, "Sin señal. Mostrando fundos guardados.", Toast.LENGTH_LONG).show()
                     }
                 }
             }
         }
+    }
+
+    private fun confirmarEliminacionFundo(fundo: Fundo) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Eliminar fundo")
+            .setMessage(
+                "¿Estás seguro de eliminar el fundo ${fundo.nombreFundo} (${fundo.codigoFundo})?\n\n" +
+                        "Esto eliminará también todas sus canchas y PRs asociados.\n\n" +
+                        "El cambio se sincronizará con el servidor al presionar Sincronizar datos."
+            )
+            .setPositiveButton("Eliminar") { _, _ ->
+                lifecycleScope.launch {
+                    viewModel.eliminarFundo(fundo.codigoFundo)
+                    Snackbar.make(
+                        binding.root,
+                        "Fundo ${fundo.nombreFundo} eliminado localmente. Sincroniza para actualizar el servidor.",
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
     private fun sincronizarDatos() {
@@ -96,25 +134,14 @@ class MainActivity : AppCompatActivity() {
             syncRequest
         )
 
-        // Observar el estado del worker para dar feedback al usuario
         workManager.getWorkInfoByIdLiveData(syncRequest.id)
             .observe(this) { workInfo ->
                 when (workInfo?.state) {
-                    WorkInfo.State.ENQUEUED -> {
-                        Toast.makeText(this, "Sincronización en cola...", Toast.LENGTH_SHORT).show()
-                    }
-                    WorkInfo.State.RUNNING -> {
-                        Toast.makeText(this, "Sincronizando datos...", Toast.LENGTH_SHORT).show()
-                    }
-                    WorkInfo.State.SUCCEEDED -> {
-                        Toast.makeText(this, "Datos sincronizados correctamente", Toast.LENGTH_LONG).show()
-                    }
-                    WorkInfo.State.FAILED -> {
-                        Toast.makeText(this, "Error al sincronizar. Intenta de nuevo.", Toast.LENGTH_LONG).show()
-                    }
-                    WorkInfo.State.BLOCKED -> {
-                        Toast.makeText(this, "Sin conexión. Conecta a internet e intenta de nuevo.", Toast.LENGTH_LONG).show()
-                    }
+                    WorkInfo.State.ENQUEUED -> Toast.makeText(this, "Sincronización en cola...", Toast.LENGTH_SHORT).show()
+                    WorkInfo.State.RUNNING  -> Toast.makeText(this, "Sincronizando datos...", Toast.LENGTH_SHORT).show()
+                    WorkInfo.State.SUCCEEDED -> Toast.makeText(this, "Datos sincronizados correctamente", Toast.LENGTH_LONG).show()
+                    WorkInfo.State.FAILED   -> Toast.makeText(this, "Error al sincronizar. Intenta de nuevo.", Toast.LENGTH_LONG).show()
+                    WorkInfo.State.BLOCKED  -> Toast.makeText(this, "Sin conexión. Conecta a internet e intenta de nuevo.", Toast.LENGTH_LONG).show()
                     else -> {}
                 }
             }
@@ -127,13 +154,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean {
         return when (item.itemId) {
-            R.id.action_sync -> {
-                sincronizarDatos()
-                true
-            }
+            R.id.action_sync -> { sincronizarDatos(); true }
             R.id.action_logout -> {
-                val sharedPref = getSharedPreferences("SesionTopografia", MODE_PRIVATE)
-                sharedPref.edit().clear().apply()
+                getSharedPreferences("SesionTopografia", MODE_PRIVATE).edit().clear().apply()
                 startActivity(Intent(this, LoginActivity::class.java))
                 finish()
                 true

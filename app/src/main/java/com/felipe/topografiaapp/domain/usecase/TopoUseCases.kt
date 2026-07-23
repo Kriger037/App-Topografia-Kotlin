@@ -7,40 +7,26 @@ import com.felipe.topografiaapp.domain.repository.ITopoRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-// ---------------------------------------------------------------------------
-// ObtenerFundosUseCase
-// Expone el Flow de fundos. El repositorio decide si viene de Room o Retrofit.
-// ---------------------------------------------------------------------------
 class ObtenerFundosUseCase @Inject constructor(
     private val repository: ITopoRepository
 ) {
     operator fun invoke(): Flow<List<Fundo>> = repository.obtenerFundos()
-
     suspend fun sincronizar() = repository.sincronizarFundos()
+    suspend fun eliminarLocalmente(codigoFundo: String) = repository.eliminarFundoLocalmente(codigoFundo)
 }
 
-// ---------------------------------------------------------------------------
-// ObtenerCanchasUseCase
-// ---------------------------------------------------------------------------
 class ObtenerCanchasUseCase @Inject constructor(
     private val repository: ITopoRepository
 ) {
-    operator fun invoke(codigoFundo: String): Flow<List<Cancha>> =
-        repository.obtenerCanchasPorFundo(codigoFundo)
-
-    suspend fun sincronizar(codigoFundo: String) =
-        repository.sincronizarCanchasPorFundo(codigoFundo)
+    operator fun invoke(codigoFundo: String): Flow<List<Cancha>> = repository.obtenerCanchasPorFundo(codigoFundo)
+    suspend fun sincronizar(codigoFundo: String) = repository.sincronizarCanchasPorFundo(codigoFundo)
+    suspend fun eliminarLocalmente(canchaId: Int) = repository.eliminarCanchaLocalmente(canchaId)
 }
 
-// ---------------------------------------------------------------------------
-// ObtenerPRsUseCase
-// ---------------------------------------------------------------------------
 class ObtenerPRsUseCase @Inject constructor(
     private val repository: ITopoRepository
 ) {
-    operator fun invoke(canchaId: Int): Flow<List<PR>> =
-        repository.obtenerPRsPorCancha(canchaId)
-
-    suspend fun sincronizar(canchaId: Int) =
-        repository.sincronizarPRsPorCancha(canchaId)
+    operator fun invoke(canchaId: Int): Flow<List<PR>> = repository.obtenerPRsPorCancha(canchaId)
+    suspend fun sincronizar(canchaId: Int) = repository.sincronizarPRsPorCancha(canchaId)
+    suspend fun eliminarLocalmente(prId: Int) = repository.eliminarPRLocalmente(prId)
 }

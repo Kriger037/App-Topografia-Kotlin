@@ -23,22 +23,32 @@ class FundosViewModel @Inject constructor(
     private val _estaOffline = MutableStateFlow(false)
     val estaOffline: StateFlow<Boolean> = _estaOffline
 
-    fun cargarFundos(){
+    fun cargarFundos() {
         viewModelScope.launch {
             _fundosState.value = UiState.Loading
             obtenerFundosUseCase()
                 .catch { e -> _fundosState.value = UiState.Error(e.message ?: "Error") }
                 .collect { lista ->
-                    _fundosState.value = if (lista.isEmpty()) UiState.Error("Sin Fundos")
-                                        else UiState.Success(lista)
+                    _fundosState.value = if (lista.isEmpty()) UiState.Error("Sin fundos")
+                    else UiState.Success(lista)
                 }
         }
         viewModelScope.launch {
             try {
                 obtenerFundosUseCase.sincronizar()
                 _estaOffline.value = false
-            } catch (e: Exception){
+            } catch (e: Exception) {
                 _estaOffline.value = true
+            }
+        }
+    }
+
+    fun eliminarFundo(codigoFundo: String) {
+        viewModelScope.launch {
+            try {
+                obtenerFundosUseCase.eliminarLocalmente(codigoFundo)
+            } catch (e: Exception) {
+                android.util.Log.e("FundosViewModel", "Error eliminando fundo: ${e.message}")
             }
         }
     }

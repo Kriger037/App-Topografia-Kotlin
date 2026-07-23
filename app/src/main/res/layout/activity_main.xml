@@ -28,6 +28,14 @@
         android:layout_marginBottom="8dp"
         android:elevation="2dp"/>
 
+    <androidx.appcompat.widget.SearchView
+        android:id="@+id/searchViewFundos"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/white"
+        android:elevation="2dp"
+        android:padding="4dp"/>
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvFundos"
         android:layout_width="match_parent"
